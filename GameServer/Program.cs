@@ -1,28 +1,17 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// Корневой эндпоинт
-app.MapGet("/", () => "Game server is running");
+var counter = new CounterService();
 
-// Эндпоинт времени
-app.MapGet("/time", () =>
+app.MapGet("/", () => "Game server is running");
+app.MapGet("/counter", () => counter.Value);
+app.MapPost("/counter/increment", () =>
 {
-    return new TimeResponse
-    {
-        Utc = DateTime.UtcNow,
-        ServerLocal = DateTime.Now
-    };
+    counter.Increment();
+    return Results.Ok(counter.Value);
 });
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();
-
-
-// DTO (просто контейнер данных)
-public class TimeResponse
-{
-    public DateTime Utc { get; set; }
-    public DateTime ServerLocal { get; set; }
-}
