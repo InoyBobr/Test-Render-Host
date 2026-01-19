@@ -7,7 +7,7 @@ public class CounterService
 
     public CounterService()
     {
-        var timer = new Timer(60_000);
+        var timer = new System.Timers.Timer(60_000);
         timer.Elapsed += (s, e) => Reset();
         timer.AutoReset = true;
         timer.Start();
