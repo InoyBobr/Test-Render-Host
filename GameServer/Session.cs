@@ -33,8 +33,8 @@ public class Session
     {
         var now = DateTime.UtcNow;
 
-        if ((now - a.LastHeartbeat).TotalSeconds > 10 ||
-            (now - b.LastHeartbeat).TotalSeconds > 10)
+        if ((now - a.LastHeartbeat).TotalSeconds > 100 ||
+            (now - b.LastHeartbeat).TotalSeconds > 100)
         {
             End("timeout");
         }
