@@ -54,8 +54,20 @@ public class Connection
 
     public async Task Send(object obj)
     {
+        if (Socket.State != WebSocketState.Open &&
+            Socket.State != WebSocketState.CloseReceived)
+            return;
+
         var json = JsonSerializer.Serialize(obj);
         var bytes = Encoding.UTF8.GetBytes(json);
-        await Socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+
+        try
+        {    
+            await Socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+        catch (WebSocketException)
+        {
+            // Игнорируем, если сокет уже закрыт
+        }
     }
 }
