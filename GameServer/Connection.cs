@@ -34,6 +34,15 @@ public class Connection
             if (type == "heartbeat")
             {
                 LastHeartbeat = DateTime.UtcNow;
+
+                if (Session == null)
+                {
+                    await Send(new
+                    {
+                        type = "heartbeat_ack",
+                        serverTime = DateTime.UtcNow.ToString("O")
+                    });
+                }
             }
             else if (type == "send")
             {
