@@ -1,3 +1,5 @@
+using System.Net.WebSockets;
+
 public class Session
 {
     private readonly Connection a;
