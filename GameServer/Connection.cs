@@ -44,6 +44,14 @@ public class Connection
                         delta = deltaTime.ToString("O")
                     });
                 }
+                else
+                {
+                    await Send(new
+                    {
+                        type = "heartbeat_ack",
+                        delta = deltaTime.ToString("O")
+                    });
+                }
             }
             else if (type == "send")
             {
