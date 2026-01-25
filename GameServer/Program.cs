@@ -1,17 +1,20 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-var counter = new CounterService();
+app.UseWebSockets();
 
-app.MapGet("/", () => "Game server is running");
-app.MapGet("/counter", () => counter.Value);
-app.MapPost("/counter/increment", () =>
+var matchmaker = new Matchmaker();
+
+app.Map("/ws", async context =>
 {
-    counter.Increment();
-    return Results.Ok(counter.Value);
-});
+    if (!context.WebSockets.IsWebSocketRequest)
+    {
+        context.Response.StatusCode = 400;
+        return;
+    }
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://0.0.0.0:{port}");
+    var ws = await context.WebSockets.AcceptWebSocketAsync();
+    await matchmaker.HandleClient(ws);
+});
 
 app.Run();
