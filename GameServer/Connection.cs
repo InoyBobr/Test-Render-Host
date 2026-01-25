@@ -33,7 +33,6 @@ public class Connection
 
             if (type == "heartbeat")
             {
-                var deltaTime = DateTime.UtcNow - LastHeartbeat;
                 LastHeartbeat = DateTime.UtcNow;
 
                 if (Session == null)
@@ -41,15 +40,7 @@ public class Connection
                     await Send(new
                     {
                         type = "heartbeat_ack",
-                        delta = deltaTime.ToString("O")
-                    });
-                }
-                else
-                {
-                    await Send(new
-                    {
-                        type = "heartbeat_ack",
-                        delta = deltaTime.ToString("O")
+                        serverTime = DateTime.UtcNow.ToString("O")
                     });
                 }
             }
@@ -63,18 +54,8 @@ public class Connection
 
     public async Task Send(object obj)
     {
-        
-
         var json = JsonSerializer.Serialize(obj);
         var bytes = Encoding.UTF8.GetBytes(json);
-
-        try
-        {    
-            await Socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-        catch (WebSocketException)
-        {
-            // Игнорируем, если сокет уже закрыт
-        }
+        await Socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
     }
 }
