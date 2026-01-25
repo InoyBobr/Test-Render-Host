@@ -1,6 +1,7 @@
 var builder = WebApplication.CreateBuilder(args);
 long totalWsRequests = 0;
 long acceptedWsRequests = 0;
+long statRequests = 0;
 var app = builder.Build();
 
 app.UseWebSockets();
@@ -25,8 +26,10 @@ app.Map("/ws", async context =>
 
 app.MapGet("/stats", () =>
 {
+    Interlocked.Increment(ref statRequests);
     return new
     {
+        statRequests,
         totalWsRequests,
         acceptedWsRequests,
         time = DateTime.UtcNow
@@ -34,4 +37,5 @@ app.MapGet("/stats", () =>
 });
 
 app.Run();
+
 
