@@ -40,6 +40,7 @@ public class Connection
 
                 if (type == "heartbeat")
                 {
+                    var delta = DateTime.UtcNow - LastHeartbeat;
                     LastHeartbeat = DateTime.UtcNow;
 
                     if (Session == null)
@@ -47,7 +48,7 @@ public class Connection
                         await Send(new
                         {
                             type = "heartbeat_ack",
-                            time = DateTime.UtcNow
+                            time = delta
                         });
                     }
                 }
