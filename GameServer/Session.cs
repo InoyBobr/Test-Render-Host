@@ -1,15 +1,20 @@
 using System.Net.WebSockets;
+using System.Threading;
 
 public class Session
 {
     private readonly Connection a;
     private readonly Connection b;
     private readonly Timer heartbeatTimer;
+    private readonly Action<Session> onEnded;
 
-    public Session(Connection a, Connection b)
+    private int ended = 0; // 0 = active, 1 = ended
+
+    public Session(Connection a, Connection b, Action<Session> onEnded)
     {
         this.a = a;
         this.b = b;
+        this.onEnded = onEnded;
 
         a.Session = this;
         b.Session = this;
@@ -25,12 +30,16 @@ public class Session
 
     public async void Relay(Connection from, string text)
     {
+        if (ended == 1) return;
+
         var target = from == a ? b : a;
         await target.Send(new { type = "message", text });
     }
 
     private void CheckHeartbeat(object? _)
     {
+        if (ended == 1) return;
+
         var now = DateTime.UtcNow;
 
         if ((now - a.LastHeartbeat).TotalSeconds > 100 ||
@@ -42,12 +51,38 @@ public class Session
 
     public async void End(string reason)
     {
+        // 🔒 Гарантия: End выполняется один раз
+        if (Interlocked.Exchange(ref ended, 1) == 1)
+            return;
+
         heartbeatTimer.Dispose();
 
         await a.Send(new { type = "session_end", reason });
         await b.Send(new { type = "session_end", reason });
 
-        await a.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, reason, CancellationToken.None);
-        await b.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, reason, CancellationToken.None);
+        SafeClose(a);
+        SafeClose(b);
+
+        onEnded(this);
+    }
+
+    private async void SafeClose(Connection c)
+    {
+        try
+        {
+            if (c.Socket.State == WebSocketState.Open ||
+                c.Socket.State == WebSocketState.CloseReceived)
+            {
+                await c.Socket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    "session_end",
+                    CancellationToken.None
+                );
+            }
+        }
+        catch
+        {
+            // игнорируем — сокет уже мёртв
+        }
     }
 }
