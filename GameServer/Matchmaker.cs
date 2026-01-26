@@ -51,8 +51,10 @@ public class Matchmaker
     {
         lock (sync)
         {
-            if (waitingPlayer == c)
+            if (waitingPlayer == c){
                 waitingPlayer = null;
+                Console.WriteLine("Connection Died");
+            }
         }
     }
 }
