@@ -1,19 +1,20 @@
-using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 public class Connection
 {
     public WebSocket Socket { get; }
     public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
     public Session? Session { get; set; }
+    public bool IsDead { get; private set; }
 
-    public Connection(WebSocket socket)
+    private readonly Action<Connection> onDead;
+
+    public Connection(WebSocket socket, Action<Connection> onDead)
     {
         Socket = socket;
+        this.onDead = onDead;
     }
 
     public async Task Listen()
@@ -24,33 +25,23 @@ public class Connection
         {
             while (Socket.State == WebSocketState.Open)
             {
-                var result = await Socket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer),
-                    CancellationToken.None
-                );
+                var result = await Socket.ReceiveAsync(buffer, CancellationToken.None);
 
                 if (result.MessageType == WebSocketMessageType.Close)
-                {
-                    Console.WriteLine("Client sent CLOSE");
-                    Session?.End("disconnect");
-                    return;
-                }
+                    break;
 
                 var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                Console.WriteLine("Received: " + json);
-
                 using var doc = JsonDocument.Parse(json);
 
-                if (!doc.RootElement.TryGetProperty("type", out var typeProp))
+                if (!doc.RootElement.TryGetProperty("type", out var t))
                     continue;
 
-                var type = typeProp.GetString();
+                var type = t.GetString();
 
                 if (type == "heartbeat")
                 {
                     LastHeartbeat = DateTime.UtcNow;
 
-                    // ❗ ВСЕГДА отвечаем, если нет сессии
                     if (Session == null)
                     {
                         await Send(new
@@ -60,31 +51,22 @@ public class Connection
                         });
                     }
                 }
-                else if (type == "send")
+                else if (type == "send" && Session != null)
                 {
-                    if (Session == null)
-                        continue;
-
-                    if (!doc.RootElement.TryGetProperty("text", out var textProp))
-                        continue;
-
-                    var text = textProp.GetString();
+                    var text = doc.RootElement.GetProperty("text").GetString();
                     if (text != null)
                         Session.Relay(this, text);
                 }
             }
         }
-        catch (WebSocketException ex)
+        catch
         {
-            Console.WriteLine("WebSocket exception in Listen: " + ex.Message);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("General exception in Listen: " + ex);
+            // соединение умерло
         }
         finally
         {
-            Console.WriteLine("Listen loop ended");
+            IsDead = true;
+            onDead(this);
             Session?.End("connection_lost");
         }
     }
