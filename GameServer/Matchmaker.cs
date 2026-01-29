@@ -62,7 +62,7 @@ public class Matchmaker
             var session = new Session(a, b, OnSessionEnded);
 
             sessions.Add(session);
-            session.Start();
+            await session.Start();
         }
     }
 
