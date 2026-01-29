@@ -15,6 +15,8 @@ public class ConnectionPair
         this.a = a;
         this.b = b;
 
+        a.Session = null;
+
         a.OnHeartbeat += OnHeartbeat;
         b.OnHeartbeat += OnHeartbeat;
 
