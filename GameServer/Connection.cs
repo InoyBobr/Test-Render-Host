@@ -8,13 +8,20 @@ public class Connection
     public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
     public Session? Session { get; set; }
     public bool IsDead { get; private set; }
+    public bool IsSleeping { get; private set; }
 
-    private readonly Action<Connection> onDead;
+    public event Action<Connection>? OnDead;
+    public event Action<Connection>? OnHeartbeat;
+    public event Action<Connection>? OnSleep;
+    public event Action<Connection>? OnWakeUp;
 
-    public Connection(WebSocket socket, Action<Connection> onDead)
+    private readonly TimeSpan sleepTimeout = TimeSpan.FromSeconds(6);
+    private readonly Timer sleepTimer;
+
+    public Connection(WebSocket socket)
     {
         Socket = socket;
-        this.onDead = onDead;
+        sleepTimer = new Timer(CheckSleep, null, 2000, 2000);
     }
 
     public async Task Listen()
@@ -42,13 +49,19 @@ public class Connection
                 {
                     var delta = DateTime.UtcNow - LastHeartbeat;
                     LastHeartbeat = DateTime.UtcNow;
+                    OnHeartbeat?.Invoke();
+                    if (IsSleeping)
+                    {
+                        IsSleeping = false;
+                        OnWakeUp?.Invoke();
+                    }
 
                     if (Session == null)
                     {
                         await Send(new
                         {
                             type = "heartbeat_ack",
-                            time = delta
+                            time = delta.TotalMilliseconds
                         });
                     }
                 }
@@ -66,9 +79,7 @@ public class Connection
         }
         finally
         {
-            IsDead = true;
-            onDead(this);
-            Session?.End("connection_lost");
+            Kill();
         }
     }
 
@@ -98,5 +109,27 @@ public class Connection
         {
             Console.WriteLine("Send failed: " + ex.Message);
         }
+    }
+
+    private void CheckSleep(object? _)
+    {
+        if (IsDead) return;
+
+        if (DateTime.UtcNow - LastHeartbeat > sleepTimeout && !IsSleeping)
+        {
+            IsSleeping = true;
+            OnSleep?.Invoke(this);
+        }
+    }
+
+    private void Kill()
+    {
+        if (IsDead) return;
+
+        IsDead = true;
+        sleepTimer.Dispose();
+
+        OnDead?.Invoke(this);
+        Session?.End("connection_lost");
     }
 }
