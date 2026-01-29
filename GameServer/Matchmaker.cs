@@ -1,7 +1,5 @@
 using System.Net.WebSockets;
 
-namespace GameServer;
-
 public class Matchmaker
 {
     private readonly object sync = new();
@@ -62,7 +60,7 @@ public class Matchmaker
             var session = new Session(a, b, OnSessionEnded);
 
             sessions.Add(session);
-            await session.Start();
+            _ = session.Start();
         }
     }
 
