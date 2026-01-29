@@ -2,6 +2,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
+namespace GameServer;
+
 public class Connection
 {
     public WebSocket Socket { get; }
