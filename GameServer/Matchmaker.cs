@@ -1,5 +1,7 @@
 using System.Net.WebSockets;
 
+namespace GameServer;
+
 public class Matchmaker
 {
     private Connection? waitingPlayer;
