@@ -1,6 +1,8 @@
 using System.Net.WebSockets;
 using System.Threading;
 
+namespace GameServer;
+
 public class Session
 {
     private readonly Connection a;
