@@ -1,4 +1,3 @@
-namespace GameServer;
 
 var builder = WebApplication.CreateBuilder(args);
 long totalWsRequests = 0;
@@ -39,6 +38,7 @@ app.MapGet("/stats", () =>
 });
 
 app.Run();
+
 
 
 
