@@ -31,7 +31,7 @@ public class Matchmaker
             await c.Send(new { type = "waiting" });
         }
 
-        await connection.Listen();
+        await c.Listen();
     }
 
     private void TryCreatePair()
