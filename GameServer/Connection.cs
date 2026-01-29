@@ -49,11 +49,11 @@ public class Connection
                 {
                     var delta = DateTime.UtcNow - LastHeartbeat;
                     LastHeartbeat = DateTime.UtcNow;
-                    OnHeartbeat?.Invoke();
+                    OnHeartbeat?.Invoke(this);
                     if (IsSleeping)
                     {
                         IsSleeping = false;
-                        OnWakeUp?.Invoke();
+                        OnWakeUp?.Invoke(this);
                     }
 
                     if (Session == null)
