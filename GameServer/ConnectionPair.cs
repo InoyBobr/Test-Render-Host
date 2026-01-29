@@ -1,5 +1,3 @@
-namespace GameServer;
-
 public class ConnectionPair
 {
     private readonly Connection a;
