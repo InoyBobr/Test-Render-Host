@@ -40,8 +40,10 @@ public class GameAPI
     public event Action<ChoiceResult>? ChoiceGetsResult;
 
     public event Action<PlayCardResult>? CardPlayedResult;
-    
 
+
+
+    private Random _random = new Random();
     // =========================
     // СОБЫТИЯ, КОТОРЫЕ API МОЖЕТ ПУБЛИКОВАТЬ
     // =========================
@@ -657,7 +659,7 @@ public class GameAPI
             TargetPick.Random =>
                 new List<CardInstance>
                 {
-                    list[UnityEngine.Random.Range(0, list.Count)]
+                    list[_random.Next(0, list.Count)]
                 },
 
             _ =>
