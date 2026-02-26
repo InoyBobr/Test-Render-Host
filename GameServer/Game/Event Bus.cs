@@ -132,7 +132,7 @@ public class EventBus
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogError($"EventBus callback error: {ex}");
+                    throw new Exception($"EventBus callback error: {ex}");
                 }
             }
         }
@@ -211,3 +211,4 @@ public class EventBus
         }
     }
 }
+
