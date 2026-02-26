@@ -38,6 +38,27 @@ app.MapGet("/stats", () =>
 
 app.Run();
 
+var json = @"
+{
+  ""CardId"": ""fire_elemental"",
+  ""basePower"": 3,
+  ""baseHealth"": 5,
+  ""color"": ""Red"",
+  ""keywords"": [""Charge"", ""Burn""],
+  ""abilities"": [
+    {
+      ""AbilityId"": ""DealDamage"",
+      ""Parameters"": [
+        { ""key"": ""amount"", ""value"": 3 }
+      ]
+    }
+  ]
+}";
+
+
+    
+
+
 
 
 
