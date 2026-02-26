@@ -1,5 +1,7 @@
 using System.Net.WebSockets;
 using System.Threading;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public class Session
 {
