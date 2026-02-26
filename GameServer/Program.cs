@@ -55,8 +55,11 @@ var json = @"
   ]
 }";
 
+var data = CardDataLoader.FromJson(json);
+
 
     
+
 
 
 
