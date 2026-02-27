@@ -56,9 +56,13 @@ var json = @"
 }";
 
 var data = CardDataLoader.FromJson(json);
+Console.WriteLine(data.basePower);
+Console.WriteLine(data.keywords.Length);
+Console.WriteLine(data.baseHealth);
 
 
     
+
 
 
 
