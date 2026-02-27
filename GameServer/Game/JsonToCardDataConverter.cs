@@ -6,6 +6,7 @@ public static class CardDataLoader
 {
     private static readonly JsonSerializerOptions _options = new JsonSerializerOptions
     {
+        IncludeFields = true,
         PropertyNameCaseInsensitive = true,
         Converters =
         {
@@ -23,4 +24,5 @@ public static class CardDataLoader
         var json = File.ReadAllText(path);
         return FromJson(json);
     }
+
 }
