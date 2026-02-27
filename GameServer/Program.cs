@@ -10,7 +10,7 @@ var json = @"
   ""basePower"": 3,
   ""baseHealth"": 5,
   ""color"": ""Red"",
-  ""keywords"": [""Charge"", ""Burn""],
+  ""keywords"": [""Hoard"", ""QuickAttack""],
   ""abilities"": [
     {
       ""AbilityId"": ""DealDamage"",
@@ -65,6 +65,7 @@ app.Run();
 
 
     
+
 
 
 
