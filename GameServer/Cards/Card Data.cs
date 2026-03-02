@@ -2,11 +2,12 @@ using System.Collections.Generic;
 
 public class CardData
 {
-    public string CardId;
+    public string CardId { get; init; }
 
-    public int basePower;
-    public int baseHealth;
-    public StickerColor color;
-    public List<AbilityDefinition> abilities;
-    public List<Keyword> keywords;
+    public int basePower { get; init; }
+    public int baseHealth { get; init; }
+    public StickerColor color { get; init; }
+    public List<AbilityDefinition> abilities { get; init; }
+    public List<Keyword> keywords { get; init; }
 }
+
