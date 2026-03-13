@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Text;
 
 public sealed class PlayCardResult
 {
@@ -8,6 +9,12 @@ public sealed class PlayCardResult
 
     public List<int>? PlayablePositions; // стадия 1
     public TargetRequest? TargetsToPick; // стадия 2
+}
+
+public sealed class RotateFaceResult
+{
+    public bool Success;
+    public string? Error;
 }
 
 public sealed class TargetRequest
@@ -21,6 +28,25 @@ public sealed class TargetRequest
     {
         AbilityTargets[abilityIndex] = groups;
     }
+    
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var (abilityIndex, groups) in AbilityTargets)
+        {
+            sb.AppendLine($"Ability {abilityIndex}:");
+
+            foreach (var g in groups)
+            {
+                sb.AppendLine(
+                    $"  Key={g.Key}, Type={g.Type}, Count={g.Count}, Distinct={g.Distinct}, Values=[{string.Join(",", g.ValidValues)}]"
+                );
+            }
+        }
+
+        return sb.ToString();
+    }
 }
 
 
@@ -32,6 +58,14 @@ public class GameContext
     // preview-данные
     private readonly CardInstance? _previewCard;
     private readonly int _previewPosition = -1;
+    
+    public Board Board => _board;
+    public Player CurrentPlayer => _player;
+    
+    public CardInstance? PreviewCard => _previewCard;
+
+    public int? PreviewPosition =>
+        _previewCard != null ? _previewPosition : null;
 
     public GameContext(Board board, Player player)
     {
@@ -40,7 +74,7 @@ public class GameContext
     }
 
     private GameContext(Board board, Player player,
-        CardInstance previewCard,
+        CardInstance? previewCard,
         int previewPosition)
     {
         _board = board;
@@ -48,11 +82,8 @@ public class GameContext
         _previewCard = previewCard;
         _previewPosition = previewPosition;
     }
-
-    public Board Board => _board;
-    public Player CurrentPlayer => _player;
     
-    public GameContext WithPreviewPlacement(CardInstance card, int pos)
+    public GameContext WithPreviewPlacement(CardInstance? card, int pos)
     {
         return new GameContext(_board, _player, card, pos);
     }
@@ -84,15 +115,75 @@ public class GameContext
             yield return card;
         }
     }
+    
+    public IEnumerable<UnitInstance> GetCardsOnFace(Face face)
+    {
+        foreach (int index in Board.FaceRotationMaps[face])
+        {
+            var card = GetCardAt(index);
+
+            if (card is UnitInstance unit)
+                yield return unit;
+        }
+    }
+
+    public IEnumerable<UnitInstance> GetAllCards()
+    {
+        for (int i = 0; i < 24; i++)
+        {
+            var card = GetCardAt(i);
+
+            if (card is UnitInstance unit)
+                yield return unit;
+        }
+    }
+    
+    public IEnumerable<UnitInstance> GetFriendlyCardsOnFace(UnitInstance card)
+    {
+        int? pos = GetCardPosition(card);
+        if (pos == null)
+            yield break;
+
+        Face f = Board.GetFaceOfSticker(pos.Value);
+
+        foreach (var c in GetCardsOnFace(f))
+            if (c.Owner == card.Owner && c != card)
+                yield return c;
+    }
+    
+    public IEnumerable<UnitInstance> GetEnemyCardsOnFace(UnitInstance card)
+    {
+        int? pos = GetCardPosition(card);
+        if (pos == null)
+            yield break;
+
+        Face f = Board.GetFaceOfSticker(pos.Value);
+
+        foreach (var c in GetCardsOnFace(f))
+            if (c.Owner != card.Owner)
+                yield return c;
+    }
+    
+    public int? GetCardPosition(CardInstance card)
+    {
+        if (_previewCard == card)
+            return _previewPosition;
+
+        if (card is UnitInstance unit)
+            return Board.GetPosition(unit);
+
+        return null;
+    }
 }
 
 
 public sealed class TargetOptionGroup
 {
-    public string Key;
-    public TargetType Type;
-    public List<int> ValidValues = new();
-    public int Count = 1;
+    public string Key { get; init; }
+    public TargetType Type{ get; init; }
+    public List<int> ValidValues { get; init; } = new();
+    public int Count { get; init; } = 1;
+    public bool Distinct { get; init; } = true;
 }
 
 public enum TargetType
@@ -100,6 +191,6 @@ public enum TargetType
     BoardPosition,
     HandIndex,
     Player,
-    DiceSide
+    CubeSide
 }
 

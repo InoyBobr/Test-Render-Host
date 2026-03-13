@@ -7,6 +7,11 @@ public abstract class CardEvent : IGameEvent
     public CardInstance Card;
 }
 
+public abstract class UnitEvent : CardEvent
+{
+    public UnitInstance Unit => (UnitInstance)Card;
+}
+
 public class CardPlayedEvent : CardEvent
 {
     public readonly int Position;
@@ -33,34 +38,34 @@ public class CardPlayRequestEvent : CardEvent
 
 //--- Изменения карт на столе ---
 
-public class CardKilledEvent : CardEvent
+public class CardKilledEvent : UnitEvent
 {
-    public CardInstance Source;
+    public CardInstance? Source;
 
-    public CardKilledEvent(CardInstance card, CardInstance source = null)
+    public CardKilledEvent(UnitInstance card, CardInstance? source = null)
     {
         Card = card;
         Source = source;
     }
 }
 
-public class CardKillRequestEvent : CardEvent
+public class CardKillRequestEvent : UnitEvent
 {
-    public CardInstance Source;
+    public CardInstance? Source;
     public bool Allowed = true;
 
-    public CardKillRequestEvent(CardInstance card, CardInstance source = null)
+    public CardKillRequestEvent(UnitInstance card, CardInstance? source = null)
     {
         Card = card;
         Source = source;
     }
 }
 
-public abstract class CardDamagedEvent : CardEvent
+public abstract class CardDamagedEvent : UnitEvent
 {
     public readonly int Damage;
-    public readonly CardInstance Source;
-    protected CardDamagedEvent(CardInstance card, int damage, CardInstance source = null)
+    public readonly CardInstance? Source;
+    protected CardDamagedEvent(UnitInstance card, int damage, CardInstance? source = null)
     {
         Card = card;
         Damage = damage;
@@ -70,25 +75,25 @@ public abstract class CardDamagedEvent : CardEvent
 
 public class CardCombatDamagedEvent : CardDamagedEvent
 {
-    public CardCombatDamagedEvent(CardInstance card, int damage, CardInstance source) : base(card, damage, source)
+    public CardCombatDamagedEvent(UnitInstance card, int damage, CardInstance? source) : base(card, damage, source)
     {
     }
 }
 
 public class CardNonCombatDamagedEvent : CardDamagedEvent
 {
-    public CardNonCombatDamagedEvent(CardInstance card, int damage, CardInstance source) : base(card, damage, source)
+    public CardNonCombatDamagedEvent(UnitInstance card, int damage, CardInstance? source) : base(card, damage, source)
     {
     }
 }
 
-public abstract class CardDamageRequestEvent : CardEvent
+public abstract class CardDamageRequestEvent : UnitEvent
 {
     public int Damage;
-    public CardInstance Source;
+    public CardInstance? Source;
     public bool Allowed = true;
     
-    public CardDamageRequestEvent(CardInstance card, int damage, CardInstance source = null)
+    public CardDamageRequestEvent(UnitInstance card, int damage, CardInstance? source = null)
     {
         Card = card;
         Damage = damage;
@@ -98,14 +103,14 @@ public abstract class CardDamageRequestEvent : CardEvent
 
 public class CardCombatDamageRequestEvent : CardDamageRequestEvent
 {
-    public CardCombatDamageRequestEvent(CardInstance card, int damage, CardInstance source) : base(card, damage, source)
+    public CardCombatDamageRequestEvent(UnitInstance card, int damage, CardInstance? source) : base(card, damage, source)
     {
     }
 }
 
 public class CardNonCombatDamageRequestEvent : CardDamageRequestEvent
 {
-    public CardNonCombatDamageRequestEvent(CardInstance card, int damage, CardInstance source) : base(card, damage, source)
+    public CardNonCombatDamageRequestEvent(UnitInstance card, int damage, CardInstance? source) : base(card, damage, source)
     {
     }
 }
@@ -125,13 +130,21 @@ public class RandomCardDamageRequestEvent : IGameEvent
     }
 }
 
-public class CardBuffedEvent : CardEvent
+public class ShieldBrokenEvent : UnitEvent
+{
+    public ShieldBrokenEvent(UnitInstance unit)
+    {
+        Card = unit;
+    }
+}
+
+public class CardBuffedEvent : UnitEvent
 {
     public readonly int PowerDelta;
     public readonly int HealthDelta;
     public readonly CardInstance Source;
 
-    public CardBuffedEvent(CardInstance card, int power, int health, CardInstance source = null)
+    public CardBuffedEvent(UnitInstance card, int power, int health, CardInstance source = null)
     {
         Card = card;
         PowerDelta = power;
@@ -140,14 +153,14 @@ public class CardBuffedEvent : CardEvent
     }
 }
 
-public class CardBuffRequestEvent : CardEvent
+public class CardBuffRequestEvent : UnitEvent
 {
     public int PowerDelta;
     public int HealthDelta;
     public CardInstance Source;
     public bool Allowed = true;
 
-    public CardBuffRequestEvent(CardInstance card, int power, int health, CardInstance source = null)
+    public CardBuffRequestEvent(UnitInstance card, int power, int health, CardInstance source = null)
     {
         Card = card;
         PowerDelta = power;
@@ -189,6 +202,7 @@ public class FaceRotatedEvent : IGameEvent
 }
 
 //--- Фазы хода ---
+public class GameStartedEvent: IGameEvent{}
 public class RoundStarted : IGameEvent
 {
     public readonly int Round;
@@ -241,14 +255,9 @@ public class PostBattlePhaseStarted : IGameEvent{}
 
 public class PostBattlePhaseEnded : IGameEvent{}
 
-public class RoundEnded : IGameEvent
+public class RoundEnded(int round) : IGameEvent
 {
-    public readonly int Round;
-
-    public RoundEnded(int round)
-    {
-        Round = round;
-    }
+    public readonly int Round = round;
 }
 
 
@@ -268,16 +277,11 @@ public class PlayerScoreRequestEvent : IGameEvent
     }
 }
 
-public class PlayerScoredEvent : IGameEvent
+public class PlayerScoredEvent(int amount, int score, Player player) : IGameEvent
 {
-    public readonly int Amount;
-    public readonly Player Player;
-
-    public PlayerScoredEvent(int amount, Player player)
-    {
-        Amount = amount;
-        Player = player;
-    }
+    public readonly int Amount = amount;
+    public readonly int FullScore = score;
+    public readonly Player Player = player;
 }
 
 //---
@@ -285,7 +289,7 @@ public class CardDrawnEvent : CardEvent
 {
     public readonly Player Player;
 
-    public CardDrawnEvent(CardInstance card, Player player)
+    public CardDrawnEvent(CardInstance? card, Player player)
     {
         Card = card;
         Player = player;
@@ -378,11 +382,14 @@ public class TargetsChosenEvent : IGameEvent
 
 public class TargetSelector
 {
-    public TargetSide Side;        // Ally / Enemy / Any
-    public CardZone Zone;        // Board / Hand / Deck / Discard
-    public FaceConstraint Face;    // Any / SameFace / SpecificFace
-    public StatConstraint Stat;    // Any / Weakest / Strongest
-    public TargetPick Pick;        // Random / All / First
+    public TargetSide Side;
+    public CardZone Zone;
+
+    public FaceConstraint Face;
+    public StatConstraint Stat;
+
+    public TargetPick Pick;
+    public int Count = 1; // NEW
 }
 public enum TargetSide
 {

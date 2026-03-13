@@ -5,9 +5,13 @@ public abstract class AbilityLogic
 {
     protected AbilityState State { get; }
     protected CardInstance Owner => State.Owner;
+    protected UnitInstance? OwnerUnit => State.Owner as UnitInstance;
     protected EventBus Bus => Owner.Bus;
 
-    protected bool OnBoardAbilityActive => Owner.Zone == CardZone.Board && !Owner.Keywords.Contains(Keyword.Silenced);
+    protected bool OnBoardAbilityActive =>
+        Owner.Zone == CardZone.Board &&
+        Owner is UnitInstance unit &&
+        !unit.Keywords.Contains(Keyword.Silenced);
 
     protected AbilityLogic(AbilityState state)
     {

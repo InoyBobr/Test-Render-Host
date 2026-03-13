@@ -16,34 +16,48 @@ public class GameAPI
     private GameState _gameState = GameState.Start;
 
     // Поле
-    public Board Board { get; private set; }
+    public Board Board { get; private set; } = new Board();
 
     // EventBus для передачи всех игровых событий
-    public EventBus Bus { get; private set; }
+    public EventBus Bus { get; private set; } = new EventBus();
 
     // Текущий игрок, чей ход
-    public Player CurrentPlayer { get; private set; }
+    public Player? CurrentPlayer { get; private set; }
 
     // Счёт очков
     public int Player1Score { get; private set; }
     public int Player2Score { get; private set; }
 
     // Текущий раунд
-    public int Round { get; private set; }
+    public int Round { get; private set; } = 1;
 
     // Количество карт, которое игрок берёт в начале игры или хода
     public int StartDrawCount { get; set; } = 4;
     
     private ChoiceContext? _pendingChoice;
+    private readonly Dictionary<UnitInstance, List<CardCombatDamageRequestEvent>> _pendingCombatDamage = new();
     
+    public event Action? GameStarted;
+    public event Action<RoundStarted>? RoundStarted;
+    public event Action<PlayerTurnStarted>? TurnStarted;
+    public event Action<PlayerTurnEnded>? TurnEnded;
+    public event Action? BattleStarted;
+    public event Action? BattleEnded;
+    public event Action<PlayerScoredEvent>? PlayerScored;
+    public event Action<CardDrawnEvent>? CardDrawn;
+    public event Action<CardDamagedEvent>? CardDamaged;
+    public event Action<CardBuffedEvent>? CardBuffed;
+    public event Action<UnitInstance, CardInstance>? CardKilled;
+    public event Action<ShieldBrokenEvent>? ShieldBroken; 
     public event Action<ChoiceContext>? ChoiceStarted;
     public event Action<ChoiceResult>? ChoiceGetsResult;
-
     public event Action<PlayCardResult>? CardPlayedResult;
+    public event Action<RotateFaceResult>? FaceRotatedResult;
+    
 
 
 
-    private Random _random = new Random();
+    private Random _random = new();
     // =========================
     // СОБЫТИЯ, КОТОРЫЕ API МОЖЕТ ПУБЛИКОВАТЬ
     // =========================
@@ -63,22 +77,32 @@ public class GameAPI
     public void StartGame(Player player1, Player player2)
     {
         SubscribeToCardEvents();
-        Round = 0;
+        Round = 1;
         Player1 = player1;
         Player2 = player2;
+        Bus.Publish(new GameStartedEvent());
+        GameStarted?.Invoke();
+        var p1 =TryDrawCards(player1, StartDrawCount);
+        var p2 =TryDrawCards(player2, StartDrawCount);
     }
 
     // 2. Ход игрока
     public void StartTurn(Player player)
     {
+        SetGameState(GameState.PlayPhase);
         CurrentPlayer = player;
-        Bus.Publish(new PlayerTurnStarted(player));
+        var e = new PlayerTurnStarted(player);
+        TurnStarted?.Invoke(e);
+        Bus.Publish(e);
+        TryDrawCards(player, 1);
     }
 
     public void EndTurn(Player player)
     {
-        CurrentPlayer = null;
+        if (player != CurrentPlayer)
+            return;
         Bus.Publish(new PlayerTurnEnded(player));
+        ProcessState();
     }
 
     // 3. Взятие карты
@@ -97,10 +121,13 @@ public class GameAPI
 
     private void DrawCards(CardDrawRequestEvent e)
     {
-        for (int i = 0; i < Math.Min(e.Amount, e.Player.GetDeck().Count); i++)
+        var minimum = Math.Min(e.Amount, e.Player.GetDeck().Count);
+        for (int i = 0; i < minimum; i++)
         {
             var card = e.Player.DrawTopCard();
-            Bus.Publish(new CardDrawnEvent(card, e.Player));
+            var drawEvent = new CardDrawnEvent(card, e.Player);
+            CardDrawn?.Invoke(drawEvent);
+            Bus.Publish(drawEvent);
         }
         
 
@@ -139,6 +166,12 @@ public class GameAPI
             return;
         }
 
+        if (_gameState != GameState.PlayPhase)
+        {
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not play phase" });
+            return;
+        }
+
         if (handIndex < 0 || handIndex >= player.GetHand().Count)
         {
             CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Invalid hand index" });
@@ -146,10 +179,11 @@ public class GameAPI
         }
 
         var card = player.GetHand()[handIndex];
+        bool isUnit = card is UnitInstance;
 
         var baseContext = new GameContext(Board, CurrentPlayer);
 
-        // 2. Проверка CanBePlayed у всех способностей
+        // 2. Проверка CanBePlayed
         foreach (var ability in card.Abilities)
         {
             if (!ability.Logic.CanBePlayed(baseContext))
@@ -159,66 +193,106 @@ public class GameAPI
             }
         }
 
-        // 3. Если позиция не указана — вернуть доступные позиции
+        // 3. PREVIEW
         if (position == null)
         {
             var playable = new List<int>();
+            TargetRequest? targetRequest = null;
 
-            for (int pos = 0; pos < 24; pos++)
+            if (isUnit)
             {
-                if (!Board.IsPositionEmpty(pos))
-                    continue;
+                for (int pos = 0; pos < 24; pos++)
+                {
+                    if (!Board.IsPositionEmpty(pos))
+                        continue;
 
-                if (card.Color != Board.GetColor(pos))
-                    continue;
+                    if (card.Color != Board.GetColor(pos))
+                        continue;
 
-                playable.Add(pos);
+                    playable.Add(pos);
+                }
             }
-            
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, PlayablePositions = playable });
+            else
+            {
+                playable.Add(-1);
+
+                targetRequest = new TargetRequest();
+
+                for (int i = 0; i < card.Abilities.Count; i++)
+                {
+                    var ability = card.Abilities[i];
+                    var groups = ability.Logic.GetTargetOptions(baseContext);
+
+                    if (groups != null && groups.Count > 0)
+                        targetRequest.Add(i, groups);
+                }
+            }
+
+            CardPlayedResult?.Invoke(new PlayCardResult
+            {
+                Success = false,
+                PlayablePositions = playable,
+                TargetsToPick = targetRequest
+            });
+
             return;
         }
 
-        // 4. Проверка позиции
-        if (!Board.IsPositionEmpty(position.Value))
+        // 4. Проверка позиции (только для юнита)
+        if (isUnit)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Position occupied" });
-            return;
-        }
+            if (!Board.IsPositionEmpty(position.Value))
+            {
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Position occupied" });
+                return;
+            }
 
-        if (card.Color != Board.GetColor(position.Value))
+            if (card.Color != Board.GetColor(position.Value))
+            {
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong color" });
+                return;
+            }
+        }
+        else
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong color" });
-            return;
+            if (position.Value != -1)
+            {
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Spell must be played with -1 position" });
+                return;
+            }
         }
 
-        // 5. Preview-контекст
-        var previewContext = new GameContext(Board, CurrentPlayer)
-            .WithPreviewPlacement(card, position.Value);
+        // 5. PreviewContext
+
+        var previewContext = isUnit ? new GameContext(Board, CurrentPlayer).WithPreviewPlacement(card, position.Value) : baseContext;
 
         // 6. Сбор target request
-        var targetRequest = new TargetRequest();
+        var targetRequestFinal = new TargetRequest();
 
         for (int i = 0; i < card.Abilities.Count; i++)
         {
             var ability = card.Abilities[i];
             var groups = ability.Logic.GetTargetOptions(previewContext);
 
-            if (groups != null && groups.Count > 0)
-                targetRequest.Add(i, groups);
+            if (groups != null)
+            {
+                groups.RemoveAll(g => g.ValidValues.Count == 0);
+                if (groups.Count > 0)
+                    targetRequestFinal.Add(i, groups);
+            }
         }
 
-        // 7. Если цели нужны, но не присланы
-        if (!targetRequest.IsEmpty && chosenTargets == null)
+        // 7. Если цели нужны
+        if (!targetRequestFinal.IsEmpty && chosenTargets == null)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, TargetsToPick = targetRequest });
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, TargetsToPick = targetRequestFinal });
             return;
         }
 
         // 8. Валидация целей
-        if (!targetRequest.IsEmpty)
+        if (!targetRequestFinal.IsEmpty)
         {
-            foreach (var (abilityIndex, groups) in targetRequest.AbilityTargets)
+            foreach (var (abilityIndex, groups) in targetRequestFinal.AbilityTargets)
             {
                 if (!chosenTargets!.TryGetValue(abilityIndex, out var abilityTargets))
                 {
@@ -232,6 +306,11 @@ public class GameAPI
                     {
                         CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Missing target key" });
                         return;
+                    }
+
+                    if (group.Distinct && values.Count != values.Distinct().Count())
+                    {
+                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Targets should be distinct" });
                     }
 
                     if (values.Count != group.Count)
@@ -251,27 +330,81 @@ public class GameAPI
                 }
             }
 
-            // записываем цели
             foreach (var (abilityIndex, abilityTargets) in chosenTargets!)
             {
                 var ability = card.Abilities[abilityIndex];
 
-                foreach (var (key, values) in abilityTargets)
+                foreach (var group in targetRequestFinal.AbilityTargets[abilityIndex])
                 {
-                    ability.SetInt(key, values[0]);
+                    var key = group.Key;
+                    var values = abilityTargets[key];
+
+                    if (group.Count == 1)
+                    {
+                        int v = values[0];
+
+                        switch (group.Type)
+                        {
+                            case TargetType.BoardPosition:
+                                ability.CardTargets[key] = new List<CardInstance>
+                                {
+                                    Board.GetCard(v)!
+                                };
+                                break;
+
+                            case TargetType.HandIndex:
+                                ability.CardTargets[key] = new List<CardInstance>
+                                {
+                                    player.GetHand()[v]
+                                };
+                                break;
+
+                            default:
+                                ability.IntValues[key] = v;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (group.Type)
+                        {
+                            case TargetType.BoardPosition:
+                                ability.CardTargets[key] =
+                                    new List<CardInstance>(values.Select(v => Board.GetCard(v)!).ToList());
+                                break;
+
+                            case TargetType.HandIndex:
+                                ability.CardTargets[key] =
+                                    values.Select(v => player.GetHand()[v]).ToList();
+                                break;
+
+                            default:
+                                ability.MultipleTargets[key] = values;
+                                break;
+                        }
+                    }
                 }
             }
         }
 
-        // 9. Финальное размещение
-        Board.PlaceCard(card, position.Value);
+        // 9. Финал
         player.RemoveFromHand(handIndex);
 
-        card.Zone = CardZone.Board;
-        card.Position = position.Value;
+        if (isUnit)
+        {
+            Board.PlaceCard((UnitInstance)card, position.Value);
+
+            card.Zone = CardZone.Board;
+            card.Position = position.Value;
+        }
+        else
+        {
+            player.AddToDiscard(card);
+        }
+
         CardPlayedResult?.Invoke(new PlayCardResult { Success = true });
+
         Bus.Publish(new CardPlayedEvent(card, position.Value));
-        
     }
     
     
@@ -379,17 +512,28 @@ public class GameAPI
         return true;
     }
 
-
-
-
-
+    
     // 5. Вращение граней
 
     public void RotateFace(Face face, int amountOfRotations, Player player)
     {
         amountOfRotations = Math.Abs(amountOfRotations) % 4;
-        if(_gameState != GameState.RotatePhase || CurrentPlayer != player || amountOfRotations == 0)
+        if(CurrentPlayer != player)
+        {
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Not your turn"});
             return;
+        }
+        if (_gameState != GameState.RotatePhase)
+        {
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Wrong phase"});
+            return;
+        }
+
+        if (amountOfRotations == 0)
+        {
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Zero rotation"});
+        }
+
         switch (amountOfRotations)
         {
             case 1:
@@ -403,50 +547,71 @@ public class GameAPI
                 Board.RotateFace(face, false);
                 break;
         }
-
+        
+        FaceRotatedResult?.Invoke(new RotateFaceResult{Success=true});
         Bus.Publish(new FaceRotatedEvent(face, amountOfRotations, player));
     } // выполняет вращение и публикует FaceRotatedEvent
 
     // 6. Бой
 
-    public void StartBattle()
+    private void StartBattle()
     {
-        _gameState = GameState.BattlePhase;
+         Console.WriteLine("Battle");
+         SetGameState(GameState.BattlePhase);
+         PreBattlePhase();
+         BattlePhase();
+         PostBattlePhase();
+         ProcessState();
     } // включает подфазы: перед боем, во время боя, после боя
     private void PreBattlePhase() 
     {
+        BattleStarted?.Invoke();
         Bus.StartBattleMode();
         Bus.Publish(new PreBattlePhaseStarted());
         Bus.EndBattleMode();
-        Bus.Publish(new PreBattlePhaseEnded());}
+        Bus.Publish(new PreBattlePhaseEnded());
+        
+    }
 
     private void BattlePhase()
     {
         Bus.StartBattleMode();
         Bus.Publish(new BattlePhaseStarted());
         foreach (var card in Board.GetAllCards())
-        {
-            var enemies = Board.GetEnemyCardsOnFace(card);
-            foreach (var enemy in enemies)
+        {   
+            //Атакует только быстрая атака и двойная атака
+            if (card.Keywords.Contains(Keyword.QuickAttack) || card.Keywords.Contains(Keyword.DoubleAttack))
             {
-                //Атакует только быстрая атака и двойная атака
-                if(enemy.Keywords.Contains(Keyword.QuickAttack) || enemy.Keywords.Contains(Keyword.DoubleAttack))
-                    Bus.Publish(new CardCombatDamageRequestEvent(card, card.CurrentPower, enemy));
+                var enemies = Board.GetEnemyCardsOnFace(card);
+                foreach (var enemy in enemies)
+                {
+                    {
+                        Console.WriteLine("Quick attack " + enemy.InstanceId + " " + card.InstanceId);
+                        Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
+                    }
+                }
             }
         }
+        ResolveCombatDamage();
         Bus.EndBattleMode();
         
         Bus.StartBattleMode();
         foreach (var card in Board.GetAllCards())
         {
-            var enemies = Board.GetEnemyCardsOnFace(card);
-            foreach (var enemy in enemies)
+            //Атакует только обычная атака и двойная атака
+            if (!card.Keywords.Contains(Keyword.QuickAttack) || card.Keywords.Contains(Keyword.DoubleAttack))
             {
-                // атакуют все кроме чистой быстрой атаки
-                if(!enemy.Keywords.Contains(Keyword.QuickAttack) || enemy.Keywords.Contains(Keyword.DoubleAttack))
-                    Bus.Publish(new CardCombatDamageRequestEvent(card, card.CurrentPower, enemy));
+                var enemies = Board.GetEnemyCardsOnFace(card);
+                foreach (var enemy in enemies)
+                {
+                    {
+                        Console.WriteLine("Normal attack " + enemy.InstanceId + " " + card.InstanceId);
+                        Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
+                    }
+                }
             }
         }
+        ResolveCombatDamage();
         Bus.EndBattleMode(); 
         Bus.Publish(new BattlePhaseEnded());
     }
@@ -457,12 +622,13 @@ public class GameAPI
         Bus.Publish(new PostBattlePhaseStarted());
         Bus.EndBattleMode();
         Bus.Publish(new PostBattlePhaseEnded());
+        BattleEnded?.Invoke();
     }
 
     // 7. Подсчёт очков
     private void CalculateScores()
     {
-        _gameState = GameState.RewardingPhase;
+        SetGameState(GameState.RewardingPhase); 
         int player1Score = 0;
         int player2Score = 0;
         foreach (Face face in Enum.GetValues(typeof(Face)))
@@ -486,6 +652,7 @@ public class GameAPI
             Bus.Publish(new PlayerScoreRequestEvent(1, Player1));
         if (player2Score > player1Score)
             Bus.Publish(new PlayerScoreRequestEvent(1, Player2));
+        ProcessState();
     } // определяет, кто контролирует грани
 
     private void AwardPoints(PlayerScoreRequestEvent e)
@@ -495,19 +662,38 @@ public class GameAPI
         if (e.Player == Player1)
         {
             Player1Score += e.Amount;
+            var scoredEvent = new PlayerScoredEvent(e.Amount, Player1Score, e.Player);
+            PlayerScored?.Invoke(scoredEvent);
+            Bus.Publish(scoredEvent);
         }
 
         if (e.Player == Player2)
         {
             Player2Score += e.Amount;
+            var scoredEvent = new PlayerScoredEvent(e.Amount, Player2Score, e.Player);
+            PlayerScored?.Invoke(scoredEvent);
+            Bus.Publish(scoredEvent);
         }
-        Bus.Publish(new PlayerScoredEvent(e.Amount,e.Player));
+        
     }   
 
     // 8. Управление картами на поле
+    private void KillCard(CardKillRequestEvent e)
+    {
+        if (e.Card.Zone != CardZone.Board)
+        {
+            return;
+        }
+        if (e.Unit.IsDead || !e.Allowed)
+        {
+            return;
+        }
+        e.Unit.Kill(new CardKilledEvent(e.Unit, e.Source));
+    }
     private void RemoveDeadCard(CardKilledEvent e)
     {
-        Board.RemoveCard(e.Card);
+        CardKilled?.Invoke(e.Unit, e.Source);
+        Board.RemoveCard(e.Unit);
         e.Card.Owner.AddToDiscard(e.Card);
     } // убирает карты с нулевым здоровьем после подфаз
 
@@ -518,11 +704,17 @@ public class GameAPI
             return;
         }
 
-        if (e.Card.IsDead || e.Damage <= 0 || !e.Allowed)
+        if (e.Unit.IsDead || e.Damage <= 0 || !e.Allowed)
         {
             return;
         }
-        e.Card.TakeDamage(new CardCombatDamagedEvent(e.Card, e.Damage, e.Source));
+        if (!_pendingCombatDamage.TryGetValue(e.Unit, out var list))
+        {
+            list = new List<CardCombatDamageRequestEvent>();
+            _pendingCombatDamage[e.Unit] = list;
+        }
+        list.Add(e);
+        Console.WriteLine("Combat damage");
     }
     
     private void ApplyNonCombatDamage(CardNonCombatDamageRequestEvent e)
@@ -532,63 +724,95 @@ public class GameAPI
             return;
         }
 
-        if (e.Card.IsDead || e.Damage <= 0 || !e.Allowed)
+        if (e.Unit.IsDead || e.Damage <= 0 || !e.Allowed)
         {
             return;
         }
-        e.Card.TakeDamage(new CardNonCombatDamagedEvent(e.Card, e.Damage, e.Source));
+        if (e.Unit.Keywords.Contains(Keyword.Shield))
+        {
+            e.Unit.Keywords.Remove(Keyword.Shield);
+            var shieldEvent = new ShieldBrokenEvent(e.Unit);
+            ShieldBroken?.Invoke(shieldEvent);
+            Bus.Publish(shieldEvent);
+            return;
+        }
+        e.Unit.TakeDamage(new CardNonCombatDamagedEvent(e.Unit, e.Damage, e.Source));
     }
-
-    private void KillCard(CardKillRequestEvent e)
+    
+    private void ResolveCombatDamage()
     {
-        if (e.Card.Zone != CardZone.Board)
+        foreach (var (unit, hits) in _pendingCombatDamage)
         {
-            return;
-        }
-        if (e.Card.IsDead || !e.Allowed)
-        {
-            return;
-        }
-        e.Card.Kill(new CardKilledEvent(e.Card, e.Source));
-    }
+            if (unit.IsDead)
+                continue;
 
+            if (unit.Keywords.Contains(Keyword.Shield))
+            {
+                unit.Keywords.Remove(Keyword.Shield);
+
+                var shieldEvent = new ShieldBrokenEvent(unit);
+                ShieldBroken?.Invoke(shieldEvent);
+                Bus.Publish(shieldEvent);
+
+                continue;
+            }
+
+            foreach (var hit in hits)
+            {
+                unit.TakeDamage(new CardCombatDamagedEvent(unit, hit.Damage, hit.Source));
+            }
+        }
+
+        _pendingCombatDamage.Clear();
+    }
+    
+    
     private void BuffCard(CardBuffRequestEvent e)
     {
         if (e.Card.Zone is CardZone.Discard or CardZone.PlayerPlaceHolder)
             return;
-        if (e.Card.IsDead || !e.Allowed || e.PowerDelta <= 0 && e.HealthDelta <= 0)
+        if (e.Unit.IsDead || !e.Allowed || e.PowerDelta <= 0 && e.HealthDelta <= 0)
             return;
-        var buffEvent = new CardBuffedEvent(e.Card, Math.Min(0, e.PowerDelta), Math.Min(0, e.HealthDelta), e.Source);
-        e.Card.Buff(buffEvent);
+        var buffEvent = new CardBuffedEvent(e.Unit, Math.Min(0, e.PowerDelta), Math.Min(0, e.HealthDelta), e.Source);
+        e.Unit.Buff(buffEvent);
     }
+
+    
 
     // 9. Вспомогательные методы
-    public IEnumerable<CardInstance> GetFriendlyCards(CardInstance card)
+    
+    //10. Методы уведомлений
+    private void BuffNotify(CardBuffedEvent e)
     {
-        return null;
-        
+        CardBuffed?.Invoke(e);
     }
 
-    public IEnumerable<CardInstance> GetEnemyCards(CardInstance card)
+    private void DamageNotify(CardDamagedEvent e)
     {
-        return null;
-        
+        CardDamaged?.Invoke(e);
     }
-
+    
+    private IEnumerable<CardInstance> GetZoneCards(CardZone zone, Player? player)
+    {
+        if (player == null)
+            return Enumerable.Empty<CardInstance>();
+        return zone switch
+        {
+            CardZone.Board => Board.GetAllCards(),
+            CardZone.Hand => player.GetHand(),
+            CardZone.Deck => player.GetDeck(),
+            CardZone.Discard => player.GetDiscard(),
+            _ => Enumerable.Empty<CardInstance>()
+        };
+    }
+    
     private List<CardInstance> GetSelectedCards(
-    CardInstance source,
-    TargetSelector selector
-    )
+    CardInstance? source,
+    TargetSelector selector)
     {
-        // 1. Берём все карты на поле
-        IEnumerable<CardInstance> candidates = Board.GetAllCards().ToList();
+        IEnumerable<CardInstance> candidates = GetZoneCards(selector.Zone, source.Owner);
 
-        // 2. Жёсткая валидация (правила игры)
-        candidates = candidates.Where(card =>
-            card is { IsDead: false, Zone: CardZone.Board }
-        );
-
-        // 3. Фильтр по стороне
+        // 1 Side filter
         if (source != null)
         {
             candidates = selector.Side switch
@@ -599,71 +823,80 @@ public class GameAPI
                 TargetSide.Enemy =>
                     candidates.Where(c => c.Owner != source.Owner),
 
-                TargetSide.Any =>
-                    candidates,
-
                 _ => candidates
             };
         }
 
-        // 4. Фильтр по грани
-        if (selector.Face == FaceConstraint.SameFace && source != null)
+        // 2 Face filter (ONLY BOARD)
+        if (selector.Zone == CardZone.Board &&
+            selector.Face == FaceConstraint.SameFace &&
+            source is UnitInstance sourceUnit)
         {
-            var sourceFace = Board.GetFaceOfSticker(source.Position);
+            var sourceFace = Board.GetFaceOfSticker(sourceUnit.Position);
+
             candidates = candidates.Where(c =>
-                Board.GetFaceOfSticker(c.Position) == sourceFace
-            );
+                c is UnitInstance u &&
+                Board.GetFaceOfSticker(u.Position) == sourceFace);
         }
 
-        // 5. Преобразуем в список (дальше порядок важен)
+        // 3 Stat filter (ONLY UNITS)
+        if (selector.Stat != StatConstraint.Any)
+        {
+            var units = candidates.OfType<UnitInstance>().ToList();
+
+            if (units.Count == 0)
+                return new List<CardInstance>();
+            
+            List<UnitInstance> GetWeakest(List<UnitInstance> units)
+            {
+                int min = units.Min(u => u.CurrentPower);
+
+                return units
+                    .Where(u => u.CurrentPower == min)
+                    .ToList();
+            }
+            List<UnitInstance> GetStrongest(List<UnitInstance> units)
+            {
+                int max = units.Max(u => u.CurrentPower);
+
+                return units
+                    .Where(u => u.CurrentPower == max)
+                    .ToList();
+            }
+            
+            units = selector.Stat switch
+            {
+                StatConstraint.Weakest => GetWeakest(units),
+
+                StatConstraint.Strongest => GetStrongest(units),
+
+                _ => units
+            };
+
+            candidates = units;
+        }
+
         var list = candidates.ToList();
 
         if (list.Count == 0)
             return list;
 
-        // 6. Ограничение по стату (НЕ выбор!)
-        list = selector.Stat switch
-        {
-            StatConstraint.Weakest =>
-                list
-                    .GroupBy(c => c.CurrentPower)
-                    .OrderBy(g => g.Key)
-                    .First()
-                    .ToList(),
-
-            StatConstraint.Strongest =>
-                list
-                    .GroupBy(c => c.CurrentPower)
-                    .OrderByDescending(g => g.Key)
-                    .First()
-                    .ToList(),
-
-            StatConstraint.Any =>
-                list,
-
-            _ => list
-        };
-
-        if (list.Count == 0)
-            return list;
-
-        // 7. Финальный выбор
+        // 4 Final pick
         return selector.Pick switch
         {
             TargetPick.All =>
                 list,
 
             TargetPick.First =>
-                new List<CardInstance> { list[0] },
+                list.Take(selector.Count).ToList(),
 
             TargetPick.Random =>
-                new List<CardInstance>
-                {
-                    list[_random.Next(0, list.Count)]
-                },
-
-            _ =>
                 list
+                    .OrderBy(_ => _random.Next())
+                    .Take(selector.Count)
+                    .ToList(),
+
+            _ => list
         };
     }
 
@@ -679,11 +912,53 @@ public class GameAPI
         Bus.Subscribe<CardKilledEvent>(RemoveDeadCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardBuffRequestEvent>(BuffCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<RequestTargetChoiceEvent>(OnRequestTargetChoice, SubscriberOwnerType.API, this);
+        Bus.Subscribe<CardBuffedEvent>(BuffNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<CardCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<CardNonCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
+        
     }
     private void UnsubscribeFromCardEvents(){}
 
     private void SetGameState(GameState gameState)
     {
         _gameState = gameState;
+    }
+
+    private void ProcessState()
+    {
+        var firstPlayer = Round % 2 == 1 ? Player1 : Player2;
+        var secondPlayer = Round % 2 == 0 ? Player1 : Player2;
+        switch (_gameState)
+        {
+            case GameState.Start:
+                StartTurn(Player1);
+                return;
+            case GameState.PlayPhase:
+                SetGameState(GameState.RotatePhase);
+                return;
+            case GameState.RotatePhase:
+            {
+                if (CurrentPlayer == firstPlayer)
+                {
+                    
+                    StartTurn(secondPlayer);
+                }
+                else
+                {
+                    StartBattle();
+                }
+                return;
+            }
+            case GameState.BattlePhase:
+                CalculateScores();
+                return;
+            case GameState.RewardingPhase:
+                Round += 1;
+                var roundStartEvent = new RoundStarted(Round);
+                RoundStarted?.Invoke(roundStartEvent);
+                Bus.Publish(roundStartEvent);
+                StartTurn(secondPlayer);
+                break;
+        }
     }
 }

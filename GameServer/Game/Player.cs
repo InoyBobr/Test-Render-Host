@@ -14,13 +14,13 @@ public class Player
     {
         _hand = new List<CardInstance>();
         _discard = new List<CardInstance>();
-        _playerPlaceholder = new CardInstance(null, this, api);
+        //_playerPlaceholder = new CardInstance(null, this, api);
         _api = api;
 
         _deck = new List<CardInstance>();
         foreach (var card in cards)
         {
-            _deck.Add(new CardInstance(card, this, api));
+            _deck.Add(CardFactory.Create(card, this, api));
         }
         _deck = _deck.OrderBy(_ => new Random().Next()).ToList();
     }
@@ -33,6 +33,11 @@ public class Player
     public List<CardInstance> GetHand()
     {
         return _hand.ToList();
+    }
+
+    public List<CardInstance> GetDiscard()
+    {
+        return _discard.ToList();
     }
 
     public CardInstance DrawTopCard()
@@ -50,6 +55,7 @@ public class Player
         card.Zone = CardZone.Discard;
         _discard.Add(card);
         card.Reset();
+        card.Position = _discard.IndexOf(card);
     }
     
     public void RemoveFromHand(CardInstance card)

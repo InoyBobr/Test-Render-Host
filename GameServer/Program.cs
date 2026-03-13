@@ -1,34 +1,17 @@
+
 var builder = WebApplication.CreateBuilder(args);
 long totalWsRequests = 0;
 long acceptedWsRequests = 0;
 long statRequests = 0;
 var app = builder.Build();
 
-var json = @"
-{
-  ""CardId"": ""fire_elemental"",
-  ""basePower"": 3,
-  ""baseHealth"": 5,
-  ""color"": ""Red"",
-  ""keywords"": [""Hoard"", ""QuickAttack""],
-  ""abilities"": [
-    {
-      ""AbilityId"": ""DealDamage"",
-      ""Parameters"": [
-        { ""key"": ""amount"", ""value"": 3 }
-      ]
-    }
-  ]
-}";
 
-var data = CardDataLoader.FromJson(json);
-Console.WriteLine(data.basePower);
-Console.WriteLine(data.keywords.Count);
-Console.WriteLine(data.baseHealth);
 
 app.UseWebSockets();
 
 var matchmaker = new Matchmaker();
+var testingObj = new TestingClass();
+testingObj.Main();
 
 app.Map("/ws", async context =>
 {
@@ -54,14 +37,10 @@ app.MapGet("/stats", () =>
         statRequests,
         totalWsRequests,
         acceptedWsRequests,
-        data.basePower,
-        data.keywords.Count,
-        data.baseHealth,
         time = DateTime.UtcNow
     };
 });
-
-app.Run();
+//app.Run();
 
 
     

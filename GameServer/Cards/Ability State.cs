@@ -3,18 +3,22 @@ using System.Collections.Generic;
 public class AbilityState
 {
     public string AbilityId { get; }
-    public CardInstance Owner { get; }
+    public CardInstance? Owner { get; }
 
     // параметры, пришедшие из AbilityData
-    public Dictionary<string, int> IntValues { get; }
+    public Dictionary<string, int> IntValues { get; } = new();
+
+    public Dictionary<string, List<int>> MultipleTargets { get; } = new();
+
+    public Dictionary<string, List<CardInstance>> CardTargets { get; } = new();
 
     // runtime-логика (не сериализуется)
-    public AbilityLogic Logic { get; private set; }
+    public AbilityLogic? Logic { get; private set; }
 
     public AbilityState(
         string abilityId,
         List<AbilityParameter> initialValues,
-        CardInstance owner
+        CardInstance? owner
     )
     {
         AbilityId = abilityId;

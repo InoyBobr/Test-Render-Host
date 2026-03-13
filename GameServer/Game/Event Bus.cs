@@ -15,7 +15,7 @@ public class EventBus
     private class Subscriber
     {
         public SubscriberOwnerType OwnerType;
-        public object Owner; // CardInstance, Player, API
+        public object? Owner; // CardInstance, Player, API
         public Delegate RawCallback; // оригинальный делегат
         public Action<IGameEvent> WrappedCallback; // обёртка
         public Type EventType;
@@ -35,6 +35,7 @@ public class EventBus
 
     public void StartBattleMode()
     {
+        
         _battleMode = true;
     }
 
@@ -50,7 +51,7 @@ public class EventBus
     public void Subscribe<TEvent>(
         Action<TEvent> callback,
         SubscriberOwnerType ownerType,
-        object ownerReference
+        object? ownerReference
     ) where TEvent : IGameEvent
     {
         Type eventType = typeof(TEvent);
@@ -76,7 +77,7 @@ public class EventBus
     // =============================================================================================
     public void Unsubscribe<TEvent>(
         Action<TEvent> callback,
-        object ownerReference
+        object? ownerReference
     ) where TEvent : IGameEvent
     {
         Type eventType = typeof(TEvent);
@@ -97,7 +98,8 @@ public class EventBus
     public void Publish(IGameEvent gameEvent)
     {
         if (gameEvent is CardKilledEvent ||
-            _battleMode && gameEvent is CardDamagedEvent)
+            _battleMode && gameEvent is CardDamagedEvent ||
+            _battleMode && gameEvent is CardBuffedEvent)
         {
             _delayedEventQueue.Enqueue(gameEvent);
             return;
@@ -144,6 +146,7 @@ public class EventBus
 
     private void ProcessDelayedQueue()
     {
+        
         if (_delayedEventQueue.Count == 0)
         {
             return;
@@ -174,7 +177,7 @@ public class EventBus
                 .ToList();
         }
 
-        CardInstance eventCard = cardEvent.Card;
+        var eventCard = cardEvent.Card;
 
         return original
             .OrderBy(sub => ResolvePriority(sub, eventCard))
@@ -193,9 +196,9 @@ public class EventBus
         }
 
         // Карта
+        
         var card = sub.Owner as CardInstance;
-
-        bool sameOwner = card.Owner == eventCard.Owner;
+        bool sameOwner = card != null && card.Owner == eventCard.Owner;
         bool sameFace = Board.GetFaceOfSticker(card.Position) == Board.GetFaceOfSticker(eventCard.Position) && card.Zone == CardZone.Board;
 
         if (sameOwner)
