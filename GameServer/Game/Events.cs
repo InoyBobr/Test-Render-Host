@@ -40,12 +40,14 @@ public class CardPlayRequestEvent : CardEvent
 
 public class CardKilledEvent : UnitEvent
 {
-    public CardInstance? Source;
+    public readonly CardInstance? Source;
+    public readonly int? SourcePos;
 
     public CardKilledEvent(UnitInstance card, CardInstance? source = null)
     {
         Card = card;
         Source = source;
+        SourcePos = Source?.Position;
     }
 }
 
@@ -65,11 +67,13 @@ public abstract class CardDamagedEvent : UnitEvent
 {
     public readonly int Damage;
     public readonly CardInstance? Source;
+    public readonly int? SourcePos;
     protected CardDamagedEvent(UnitInstance card, int damage, CardInstance? source = null)
     {
         Card = card;
         Damage = damage;
         Source = source;
+        SourcePos = Source?.Position;
     }
 }
 
@@ -142,14 +146,16 @@ public class CardBuffedEvent : UnitEvent
 {
     public readonly int PowerDelta;
     public readonly int HealthDelta;
-    public readonly CardInstance Source;
+    public readonly CardInstance? Source;
+    public readonly int? SourcePos;
 
-    public CardBuffedEvent(UnitInstance card, int power, int health, CardInstance source = null)
+    public CardBuffedEvent(UnitInstance card, int power, int health, CardInstance? source = null)
     {
         Card = card;
         PowerDelta = power;
         HealthDelta = health;
         Source = source;
+        SourcePos = Source?.Position;
     }
 }
 
@@ -174,7 +180,7 @@ public class RandomCardBuffRequestEvent : IGameEvent
     public TargetSelector Selector;
     public int PowerDelta;
     public int HealthDelta;
-    public CardInstance Source;
+    public CardInstance? Source;
 
     public RandomCardBuffRequestEvent(TargetSelector selector, int powerDelta, int healthDelta, CardInstance source = null)
     {
@@ -289,7 +295,7 @@ public class CardDrawnEvent : CardEvent
 {
     public readonly Player Player;
 
-    public CardDrawnEvent(CardInstance? card, Player player)
+    public CardDrawnEvent(CardInstance card, Player player)
     {
         Card = card;
         Player = player;
@@ -311,8 +317,9 @@ public class CardDrawRequestEvent : IGameEvent
 
 public class CardMovedToDiscard : CardEvent
 {
-    public CardMovedToDiscard()
+    public CardMovedToDiscard(CardInstance card)
     {
+        Card = card;
     }
 }
 

@@ -64,6 +64,25 @@ public class UnitInstance : CardInstance
             Bus.Publish(new CardKilledEvent(this, e.Source));
         }
     }
+    
+    public void TakeDamage(List<CardCombatDamagedEvent> hits)
+    {
+        if (hits.Count == 0)
+            return;
+
+        foreach (var hit in hits)
+        {
+            _currentHealth -= hit.Damage;
+            Bus.Publish(hit);
+        }
+
+        if (IsDead)
+        {
+            var killer = hits.Count == 1 ? hits[0].Source : null;
+
+            Bus.Publish(new CardKilledEvent(this, killer));
+        }
+    }
 
     public void Kill(CardKilledEvent e)
     {

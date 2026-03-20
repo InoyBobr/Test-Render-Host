@@ -22,13 +22,39 @@ public class EventBus
     }
 
     private Queue<IGameEvent> _eventQueue = new();
+
     private Queue<IGameEvent> _delayedEventQueue = new();
+
     private bool _processing = false;
+
     private bool _battleMode = false;
 
     private Dictionary<Type, List<Subscriber>> _subscribers = new();
-    
-    
+
+    private readonly HashSet<Type> _resetCounterEvents = new()
+    {
+        typeof(CardPlayedEvent),
+        typeof(FaceRotatedEvent),
+        typeof(PlayerTurnStarted),
+        typeof(PlayerTurnEnded),
+        typeof(PlayerRotationPhaseStarted),
+        typeof(PreBattlePhaseStarted),
+        typeof(PreBattlePhaseEnded),
+        typeof(BattlePhaseStarted),
+        typeof(BattlePhaseEnded),
+        typeof(PostBattlePhaseStarted),
+        typeof(PostBattlePhaseEnded),
+        typeof(RoundEnded),
+        typeof(PlayerScoredEvent),
+        typeof(CardKilledEvent)
+        
+        // можно добавить другие, которые сбрасывают “цикл игрока”
+    };
+
+    // список событий, при которых нужно сбросить счётчик
+    private const int MaxEventsPerCycle = 1000;
+    private int _eventsProcessedInCycle = 0;
+
     // =============================================================================================
     // БОЕВОЙ РЕЖИМ
     // =============================================================================================
@@ -97,11 +123,22 @@ public class EventBus
     // =============================================================================================
     public void Publish(IGameEvent gameEvent)
     {
+        if (_resetCounterEvents.Contains(gameEvent.GetType()))
+            _eventsProcessedInCycle = 0;
+        
+        
+        
         if (gameEvent is CardKilledEvent ||
             _battleMode && gameEvent is CardDamagedEvent ||
             _battleMode && gameEvent is CardBuffedEvent)
         {
             _delayedEventQueue.Enqueue(gameEvent);
+            return;
+        }
+        
+        if (_eventsProcessedInCycle >= MaxEventsPerCycle)
+        {
+            Console.WriteLine("EventBus: max events per cycle reached, skipping event " + gameEvent.GetType().Name);
             return;
         }
         _eventQueue.Enqueue(gameEvent);
@@ -120,6 +157,12 @@ public class EventBus
         {
             var e = _eventQueue.Dequeue();
             Type eventType = e.GetType();
+            _eventsProcessedInCycle++;
+            if (_eventsProcessedInCycle > MaxEventsPerCycle)
+            {
+                Console.WriteLine("EventBus: event cycle limit reached, stopping queue processing");
+                break;
+            }
 
             if (!_subscribers.TryGetValue(eventType, out var list))
                 continue;

@@ -1,0 +1,9 @@
+{
+  "CardId": "fragile",
+  "Type": "Unit",
+  "basePower": 1,
+  "baseHealth": 1,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": []
+}

@@ -1,0 +1,16 @@
+{
+  "CardId": "redShaman",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Red",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "enemy_ping_on_play",
+      "Parameters": [
+        {"key" : "damage", "value" : 1}
+      ]
+    }
+  ]
+}

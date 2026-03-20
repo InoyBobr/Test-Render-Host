@@ -1,0 +1,17 @@
+{
+  "CardId": "greenShaman",
+  "Type": "Unit",
+  "basePower": 1,
+  "baseHealth": 5,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "ally_buff_on_play",
+      "Parameters": [
+        {"key" : "powerBuff", "value" : 1},
+        {"key" : "healthBuff", "value" : 1}
+      ]
+    }
+  ]
+}

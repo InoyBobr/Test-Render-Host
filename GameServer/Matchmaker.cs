@@ -4,6 +4,7 @@ public class Matchmaker
 {
     private readonly object sync = new();
 
+    private readonly List<Connection> pendingDeck = new();
     private readonly List<Connection> waiting = new();
     private readonly List<Connection> sleeping = new();
     private readonly List<ConnectionPair> pairs = new();
@@ -17,19 +18,29 @@ public class Matchmaker
         c.OnDead += OnConnectionDead;
         c.OnSleep += OnConnectionSleep;
         c.OnWakeUp += OnConnectionWakeUp;
+        c.OnDeckReady += OnDeckReady;
 
         lock (sync)
         {
-            waiting.Add(c);
-            TryCreatePair();
+            pendingDeck.Add(c);
         }
 
         if (c.Session == null)
         {
-            await c.Send(new { type = "waiting" });
+            await c.Send(new { type = "waiting deck" });
         }
 
         await c.Listen();
+    }
+    
+    private void OnDeckReady(Connection c)
+    {
+        lock (sync)
+        {
+            pendingDeck.Remove(c);
+            waiting.Add(c);
+            TryCreatePair();
+        }
     }
 
     private void TryCreatePair()

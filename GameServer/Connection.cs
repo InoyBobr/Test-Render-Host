@@ -9,11 +9,14 @@ public class Connection
     public Session? Session { get; set; }
     public bool IsDead { get; private set; }
     public bool IsSleeping { get; private set; }
+    public List<string>? DeckIds { get; private set; }
+    public bool Validated { get; private set; }
 
     public event Action<Connection>? OnDead;
     public event Action<Connection>? OnHeartbeat;
     public event Action<Connection>? OnSleep;
     public event Action<Connection>? OnWakeUp;
+    public event Action<Connection>? OnDeckReady; 
 
     private readonly TimeSpan sleepTimeout = TimeSpan.FromSeconds(6);
     private readonly Timer sleepTimer;
@@ -65,11 +68,29 @@ public class Connection
                         });
                     }
                 }
+                else if (type == "deck")
+                {
+                    if (Validated)
+                        continue;
+
+                    if (!TryValidateDeck(doc.RootElement, out var ids))
+                    {
+                        await Reject("Invalid Deck");
+                        return;
+                    }
+
+                    DeckIds = ids;
+                    Validated = true;
+
+                    OnDeckReady?.Invoke(this);
+
+                    await Send(new { type = "deck_accepted" });
+                }
                 else if (type == "send" && Session != null)
                 {
                     var text = doc.RootElement.GetProperty("text").GetString();
                     if (text != null)
-                        Session.Relay(this, text);
+                        Session.HandleMessage(this, text);
                 }
             }
         }
@@ -131,5 +152,48 @@ public class Connection
 
         OnDead?.Invoke(this);
         Session?.End("connection_lost");
+    }
+
+    private bool TryValidateDeck(JsonElement root, out List<string> deckIds)
+    {
+        deckIds = new List<string>();
+
+        if (!root.TryGetProperty("cards", out var cardsEl) ||
+            cardsEl.ValueKind != JsonValueKind.Array)
+            return false;
+
+        foreach (var el in cardsEl.EnumerateArray())
+        {
+            var id = el.GetString();
+
+            if (string.IsNullOrWhiteSpace(id))
+                return false;
+
+            if (!CardDatabase.TryGet(id, out _))
+                return false;
+
+            deckIds.Add(id);
+        }
+
+        if (deckIds.Count == 0)
+            return false;
+
+        return true;
+    }
+    
+    private async Task Reject(string reason)
+    {
+        if (Socket.State == WebSocketState.Open)
+        {
+            await Send(new { type = "error", reason });
+
+            await Socket.CloseAsync(
+                WebSocketCloseStatus.PolicyViolation,
+                reason,
+                CancellationToken.None
+            );
+        }
+
+        Kill();
     }
 }

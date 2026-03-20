@@ -1,4 +1,3 @@
-#nullable enable
 using System.Collections.Generic;
 using System.Text;
 
@@ -9,12 +8,15 @@ public sealed class PlayCardResult
 
     public List<int>? PlayablePositions; // стадия 1
     public TargetRequest? TargetsToPick; // стадия 2
+
+    public Player Player;
 }
 
 public sealed class RotateFaceResult
 {
     public bool Success;
     public string? Error;
+    public Player Player;
 }
 
 public sealed class TargetRequest
@@ -137,6 +139,11 @@ public class GameContext
                 yield return unit;
         }
     }
+
+    public IEnumerable<UnitInstance> GetFriendlyCards(CardInstance card)
+    {
+        return GetAllCards().Where(c => c.Owner == card.Owner && c != card);
+    }
     
     public IEnumerable<UnitInstance> GetFriendlyCardsOnFace(UnitInstance card)
     {
@@ -151,6 +158,10 @@ public class GameContext
                 yield return c;
     }
     
+    public IEnumerable<UnitInstance> GetEnemyCards(CardInstance card)
+    {
+        return GetAllCards().Where(c => c.Owner != card.Owner);
+    }
     public IEnumerable<UnitInstance> GetEnemyCardsOnFace(UnitInstance card)
     {
         int? pos = GetCardPosition(card);
@@ -191,6 +202,7 @@ public enum TargetType
     BoardPosition,
     HandIndex,
     Player,
-    CubeSide
+    CubeSide,
+    Sticker
 }
 

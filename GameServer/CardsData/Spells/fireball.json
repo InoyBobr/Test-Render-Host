@@ -1,0 +1,16 @@
+{
+  "CardId": "fireball",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Red",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "damage_on_play_spell",
+      "Parameters": [
+        {"key" : "damage", "value" : 3}
+      ]
+    }
+  ]
+}

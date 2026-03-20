@@ -6,5 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Game\CardsData\fragile.json" />
+    <_ContentIncludedByDefault Remove="Game\CardsData\GreenShaman.json" />
+  </ItemGroup>
+
 </Project>
 

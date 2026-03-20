@@ -47,12 +47,14 @@ public class GameAPI
     public event Action<CardDrawnEvent>? CardDrawn;
     public event Action<CardDamagedEvent>? CardDamaged;
     public event Action<CardBuffedEvent>? CardBuffed;
-    public event Action<UnitInstance, CardInstance>? CardKilled;
+    public event Action<CardKilledEvent>? CardKilled;
     public event Action<ShieldBrokenEvent>? ShieldBroken; 
     public event Action<ChoiceContext>? ChoiceStarted;
     public event Action<ChoiceResult>? ChoiceGetsResult;
     public event Action<PlayCardResult>? CardPlayedResult;
+    public event Action<CardPlayedEvent>? CardPlayed; 
     public event Action<RotateFaceResult>? FaceRotatedResult;
+    public event Action<FaceRotatedEvent>? FaceRotated;
     
 
 
@@ -63,7 +65,7 @@ public class GameAPI
     // =========================
     // CardDrawnEvent
     // CardPlayedEvent
-    // FaceRotatedEvent
+    // RoRotatedEvent
     // DamageDealtEvent
     // PlayerScoredEvent
     // TurnStartedEvent / TurnEndedEvent
@@ -84,10 +86,11 @@ public class GameAPI
         GameStarted?.Invoke();
         var p1 =TryDrawCards(player1, StartDrawCount);
         var p2 =TryDrawCards(player2, StartDrawCount);
+        StartTurn(player1);
     }
 
     // 2. Ход игрока
-    public void StartTurn(Player player)
+    private void StartTurn(Player player)
     {
         SetGameState(GameState.PlayPhase);
         CurrentPlayer = player;
@@ -134,24 +137,7 @@ public class GameAPI
     } // фактическое действие и событие CardDrawnEvent
 
     // 4. Розыгрыш карт
-    
-    /*public bool TryPlayCard(Player player, CardInstance card, int position)
-    {
-        if (player != CurrentPlayer)
-            return false;
-        if (!Board.IsPositionEmpty(position) || card.Color != Board.GetColor(position))
-            return false;
-        var e = new CardPlayRequestEvent(card, position);
-        if (!e.Allowed)
-            return false;
-        Board.PlaceCard(card, position);
-        card.Zone = CardZone.Board;
-        card.Position = position;
-        Bus.Publish(new CardPlayedEvent(card, position));
-        return true;
 
-    } // возвращает true, если карта сыграна */
-    
     public void TryPlayCard(
     Player player,
     int handIndex,
@@ -162,19 +148,19 @@ public class GameAPI
         // 1. Базовые проверки
         if (player != CurrentPlayer)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not your turn" });
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not your turn", Player = player});
             return;
         }
 
         if (_gameState != GameState.PlayPhase)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not play phase" });
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not play phase", Player = player});
             return;
         }
 
         if (handIndex < 0 || handIndex >= player.GetHand().Count)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Invalid hand index" });
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Invalid hand index", Player = player});
             return;
         }
 
@@ -188,7 +174,7 @@ public class GameAPI
         {
             if (!ability.Logic.CanBePlayed(baseContext))
             {
-                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Card cannot be played now" });
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Card cannot be played now", Player = player});
                 return;
             }
         }
@@ -232,7 +218,8 @@ public class GameAPI
             {
                 Success = false,
                 PlayablePositions = playable,
-                TargetsToPick = targetRequest
+                TargetsToPick = targetRequest,
+                Player = player
             });
 
             return;
@@ -243,13 +230,13 @@ public class GameAPI
         {
             if (!Board.IsPositionEmpty(position.Value))
             {
-                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Position occupied" });
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Position occupied", Player = player});
                 return;
             }
 
             if (card.Color != Board.GetColor(position.Value))
             {
-                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong color" });
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong color", Player = player});
                 return;
             }
         }
@@ -257,7 +244,7 @@ public class GameAPI
         {
             if (position.Value != -1)
             {
-                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Spell must be played with -1 position" });
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Spell must be played with -1 position", Player = player});
                 return;
             }
         }
@@ -285,7 +272,7 @@ public class GameAPI
         // 7. Если цели нужны
         if (!targetRequestFinal.IsEmpty && chosenTargets == null)
         {
-            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, TargetsToPick = targetRequestFinal });
+            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, TargetsToPick = targetRequestFinal, Player = player});
             return;
         }
 
@@ -296,7 +283,7 @@ public class GameAPI
             {
                 if (!chosenTargets!.TryGetValue(abilityIndex, out var abilityTargets))
                 {
-                    CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Missing targets" });
+                    CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Missing targets", Player = player});
                     return;
                 }
 
@@ -304,18 +291,19 @@ public class GameAPI
                 {
                     if (!abilityTargets.TryGetValue(group.Key, out var values))
                     {
-                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Missing target key" });
+                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Missing target key", Player = player});
                         return;
                     }
 
                     if (group.Distinct && values.Count != values.Distinct().Count())
                     {
-                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Targets should be distinct" });
+                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Targets should be distinct", Player = player });
+                        return;
                     }
 
                     if (values.Count != group.Count)
                     {
-                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong target count" });
+                        CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Wrong target count", Player = player });
                         return;
                     }
 
@@ -323,7 +311,7 @@ public class GameAPI
                     {
                         if (!group.ValidValues.Contains(v))
                         {
-                            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Invalid target" });
+                            CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Invalid target", Player = player });
                             return;
                         }
                     }
@@ -400,11 +388,13 @@ public class GameAPI
         else
         {
             player.AddToDiscard(card);
+            Bus.Publish(new CardMovedToDiscard(card));
         }
 
-        CardPlayedResult?.Invoke(new PlayCardResult { Success = true });
-
-        Bus.Publish(new CardPlayedEvent(card, position.Value));
+        CardPlayedResult?.Invoke(new PlayCardResult { Success = true, Player = player });
+        var e = new CardPlayedEvent(card, position.Value);
+        CardPlayed?.Invoke(e);
+        Bus.Publish(e);
     }
     
     
@@ -429,6 +419,7 @@ public class GameAPI
     {
         public bool Success;
         public string? Error;
+        public Player Player;
     }
 
     public void SubmitChoice(
@@ -437,7 +428,7 @@ public class GameAPI
     {
         if (_pendingChoice == null)
         {
-            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "No choice in progress." });
+            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "No choice in progress.", Player = player});
             return;
         }
 
@@ -445,7 +436,7 @@ public class GameAPI
 
         if (ctx.Source.Owner.Owner != player)
         {
-            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Not your choice." });
+            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Not your choice.", Player = player });
             return;
         }
 
@@ -454,21 +445,21 @@ public class GameAPI
         {
             if (!ctx.Deniable)
             {
-                ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Choice cannot be skipped." });
+                ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Choice cannot be skipped.", Player = player });
                 return;
             }
 
             ResolveChoice(new List<List<int>>());
-            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = true });
+            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = true, Player = player });
             return;
         }
 
         if (!ValidateChoice(ctx.Options, selectedTargets))
         {
-            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Invalid targets." });
+            ChoiceGetsResult?.Invoke(new ChoiceResult { Success = false, Error = "Invalid targets.", Player = player });
             return;
         }
-        ChoiceGetsResult?.Invoke(new ChoiceResult { Success = true });
+        ChoiceGetsResult?.Invoke(new ChoiceResult { Success = true, Player = player });
         ResolveChoice(selectedTargets);
     }
     
@@ -520,18 +511,18 @@ public class GameAPI
         amountOfRotations = Math.Abs(amountOfRotations) % 4;
         if(CurrentPlayer != player)
         {
-            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Not your turn"});
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Not your turn", Player = player});
             return;
         }
         if (_gameState != GameState.RotatePhase)
         {
-            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Wrong phase"});
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Wrong phase", Player = player});
             return;
         }
 
         if (amountOfRotations == 0)
         {
-            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Zero rotation"});
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Zero rotation", Player = player});
         }
 
         switch (amountOfRotations)
@@ -548,8 +539,10 @@ public class GameAPI
                 break;
         }
         
-        FaceRotatedResult?.Invoke(new RotateFaceResult{Success=true});
-        Bus.Publish(new FaceRotatedEvent(face, amountOfRotations, player));
+        FaceRotatedResult?.Invoke(new RotateFaceResult{Success=true, Player = player});
+        var e = new FaceRotatedEvent(face, amountOfRotations, player);
+        FaceRotated?.Invoke(e);
+        Bus.Publish(e);
     } // выполняет вращение и публикует FaceRotatedEvent
 
     // 6. Бой
@@ -596,6 +589,7 @@ public class GameAPI
         Bus.EndBattleMode();
         
         Bus.StartBattleMode();
+        
         foreach (var card in Board.GetAllCards())
         {
             //Атакует только обычная атака и двойная атака
@@ -692,9 +686,10 @@ public class GameAPI
     }
     private void RemoveDeadCard(CardKilledEvent e)
     {
-        CardKilled?.Invoke(e.Unit, e.Source);
+        CardKilled?.Invoke(e);
         Board.RemoveCard(e.Unit);
         e.Card.Owner.AddToDiscard(e.Card);
+        Bus.Publish(new CardMovedToDiscard(e.Card));
     } // убирает карты с нулевым здоровьем после подфаз
 
     private void ApplyCombatDamage(CardCombatDamageRequestEvent e)
@@ -757,10 +752,11 @@ public class GameAPI
                 continue;
             }
 
-            foreach (var hit in hits)
-            {
-                unit.TakeDamage(new CardCombatDamagedEvent(unit, hit.Damage, hit.Source));
-            }
+            var damageEvents = hits
+                .Select(h => new CardCombatDamagedEvent(unit, h.Damage, h.Source))
+                .ToList();
+
+            unit.TakeDamage(damageEvents);
         }
 
         _pendingCombatDamage.Clear();
@@ -773,7 +769,7 @@ public class GameAPI
             return;
         if (e.Unit.IsDead || !e.Allowed || e.PowerDelta <= 0 && e.HealthDelta <= 0)
             return;
-        var buffEvent = new CardBuffedEvent(e.Unit, Math.Min(0, e.PowerDelta), Math.Min(0, e.HealthDelta), e.Source);
+        var buffEvent = new CardBuffedEvent(e.Unit, Math.Max(0, e.PowerDelta), Math.Max(0, e.HealthDelta), e.Source);
         e.Unit.Buff(buffEvent);
     }
 
@@ -935,9 +931,13 @@ public class GameAPI
                 return;
             case GameState.PlayPhase:
                 SetGameState(GameState.RotatePhase);
+                Bus.Publish(new PlayerRotationPhaseStarted(CurrentPlayer));
                 return;
             case GameState.RotatePhase:
             {
+                var e = new PlayerTurnEnded(CurrentPlayer);
+                TurnEnded?.Invoke(e);
+                Bus.Publish(e);
                 if (CurrentPlayer == firstPlayer)
                 {
                     
@@ -953,6 +953,7 @@ public class GameAPI
                 CalculateScores();
                 return;
             case GameState.RewardingPhase:
+                Bus.Publish(new RoundEnded(Round));
                 Round += 1;
                 var roundStartEvent = new RoundStarted(Round);
                 RoundStarted?.Invoke(roundStartEvent);

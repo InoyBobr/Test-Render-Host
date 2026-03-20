@@ -156,16 +156,14 @@ public class Board
         for (int oldIndex = 0; oldIndex < 24; oldIndex++)
         {
             int newIndex = RotateStickerIndex(oldIndex, face, clockwise);
-            //Console.WriteLine("old: " + oldIndex + " new: " + newIndex);
-
             // перенос цвета
             _stickerColors[newIndex] = oldColors[oldIndex];
 
             // перенос карты (если была)
             var card = oldSlots[oldIndex];
+            _slots[newIndex] = card;
             if (card != null)
             {
-                _slots[newIndex] = card;
                 _cardPositions[card] = newIndex;
                 card.Position = newIndex;
                 Console.WriteLine("old: " + oldIndex + " new: " + newIndex + " pos: " + card.Position);
@@ -245,7 +243,6 @@ public class Board
 
         throw new Exception($"Sticker {sticker} does not belong to any face.");
     }
-    
     
 }
 
