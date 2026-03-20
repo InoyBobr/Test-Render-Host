@@ -40,7 +40,7 @@ app.MapGet("/stats", () =>
         time = DateTime.UtcNow
     };
 });
-//app.Run();
+app.Run();
 
 
     
