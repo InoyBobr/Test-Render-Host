@@ -18,8 +18,8 @@ public class FirstSession
         this.b = b;
         this.onEnded = onEnded;
 
-        a.Session = this;
-        b.Session = this;
+        a.FirstSession = this;
+        b.FirstSession = this;
 
         heartbeatTimer = new Timer(CheckHeartbeat, null, 5000, 5000);
     }

@@ -7,6 +7,7 @@ public class Connection
     public WebSocket Socket { get; }
     public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
     public Session? Session { get; set; }
+    public FirstSession? FirstSession { get; set; }
     public bool IsDead { get; private set; }
     public bool IsSleeping { get; private set; }
     public List<string>? DeckIds { get; private set; }
