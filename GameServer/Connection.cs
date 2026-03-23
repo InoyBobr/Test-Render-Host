@@ -153,6 +153,7 @@ public class Connection
 
         OnDead?.Invoke(this);
         Session?.End("connection_lost");
+        FirstSession?.End("connection_lost");
     }
 
     private bool TryValidateDeck(JsonElement root, out List<string> deckIds)

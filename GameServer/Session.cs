@@ -33,30 +33,20 @@ public class Session
 
     private void InitGame()
     {
-        // ❗ тут ты сам решишь откуда брать колоды
-        // сейчас просто пример
+        var deckA = connA.DeckIds!
+            .Select(id => CardDatabase.Get(id))
+            .ToList();
 
-        var deckA = BuildDefaultDeck();
-        var deckB = BuildDefaultDeck();
+        var deckB = connB.DeckIds!
+            .Select(id => CardDatabase.Get(id))
+            .ToList();
 
         api = new GameAPI();
 
         playerA = new Player(deckA, api);
         playerB = new Player(deckB, api);
     }
-
-    private List<CardData> BuildDefaultDeck()
-    {
-        return new List<CardData>
-        {
-            CardDatabase.Get("fragile"),
-            CardDatabase.Get("fragile"),
-            CardDatabase.Get("fragile"),
-            CardDatabase.Get("fragile"),
-            CardDatabase.Get("fragile")
-        };
-    }
-
+    
     public async Task Start()
     {
         await Task.WhenAll(
@@ -117,6 +107,18 @@ public class Session
                     int dir = doc.RootElement.GetProperty("dir").GetInt32();
 
                     api.RotateFace(face, dir, player);
+                    break;
+                }
+                case "submit_choice":
+                {
+                    List<List<int>>? targets = null;
+
+                    if (doc.RootElement.TryGetProperty("targets", out var targetsEl))
+                    {
+                        targets = JsonSerializer.Deserialize<List<List<int>>>(targetsEl.GetRawText());
+                    }
+
+                    api.SubmitChoice(player, targets);
                     break;
                 }
             }
@@ -330,11 +332,45 @@ public class Session
         if (Interlocked.Exchange(ref ended, 1) == 1)
             return;
 
+        try
+        {
+            await Task.WhenAll(
+                connA.Send(new { type = "session_end", reason }),
+                connB.Send(new { type = "session_end", reason })
+            );
+        }
+        catch
+        {
+            // игнор — кто-то мог уже отвалиться
+        }
+
         await Task.WhenAll(
-            connA.Send(new { type = "session_end", reason }),
-            connB.Send(new { type = "session_end", reason })
+            SafeClose(connA),
+            SafeClose(connB)
         );
 
         onEnded(this);
+    }
+    
+    private async Task SafeClose(Connection c)
+    {
+        try
+        {
+            var socket = c.Socket;
+
+            if (socket.State == WebSocketState.Open ||
+                socket.State == WebSocketState.CloseReceived)
+            {
+                await socket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    "session_end",
+                    CancellationToken.None
+                );
+            }
+        }
+        catch
+        {
+            // сокет уже умер — ок
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.WebSockets;
 
 public class Matchmaker
@@ -63,6 +64,7 @@ public class Matchmaker
     {
         lock (sync)
         {
+            Console.WriteLine("Pair Confirmed");
             pairs.Remove(pair);
             pair.OnConfirmed -= OnPairConfirmed;
             pair.OnBroken -= OnPairBroken;
