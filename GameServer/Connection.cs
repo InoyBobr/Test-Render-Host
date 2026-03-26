@@ -94,6 +94,7 @@ public class Connection
                     case "game_request" when Session != null:
                     {
                         var text = doc.RootElement.GetProperty("data").GetRawText();
+                        Console.WriteLine("Request: " + text);
                         Session.HandleMessage(this, text);
                         break;
                     }
