@@ -157,6 +157,7 @@ public class GameAPI
             CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Not play phase", Player = player});
             return;
         }
+        
 
         if (handIndex < 0 || handIndex >= player.GetHand().Count)
         {

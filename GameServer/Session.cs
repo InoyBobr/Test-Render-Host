@@ -79,11 +79,29 @@ public class Session
             {
                 case "play_card":
                 {
-                    int handIndex = doc.RootElement.GetProperty("handIndex").GetInt32();
-                    int position = doc.RootElement.GetProperty("position").GetInt32();
+                    if (!doc.RootElement.TryGetProperty("handIndex", out var handIndexEl) ||
+                        handIndexEl.ValueKind != JsonValueKind.Number)
+                    {
+                        _ = from.Send(new
+                        {
+                            type = "card_played_result",
+                            success = false,
+                            error = "Invalid hand index type"
+
+                        });
+                        return;
+                    }
+
+                    int handIndex = handIndexEl.GetInt32();
+
+                    int? position = null;
+                    if (doc.RootElement.TryGetProperty("position", out var posEl) &&
+                        posEl.ValueKind == JsonValueKind.Number)
+                    {
+                        position = posEl.GetInt32();
+                    }
 
                     Dictionary<int, Dictionary<string, List<int>>>? targets = null;
-
                     if (doc.RootElement.TryGetProperty("targets", out var targetsEl))
                     {
                         targets = JsonSerializer.Deserialize<

@@ -49,49 +49,54 @@ public class Connection
 
                 var type = t.GetString();
 
-                if (type == "heartbeat")
+                switch (type)
                 {
-                    var delta = DateTime.UtcNow - LastHeartbeat;
-                    LastHeartbeat = DateTime.UtcNow;
-                    OnHeartbeat?.Invoke(this);
-                    if (IsSleeping)
+                    case "heartbeat":
                     {
-                        IsSleeping = false;
-                        OnWakeUp?.Invoke(this);
-                    }
-
-                    if (Session == null)
-                    {
-                        await Send(new
+                        var delta = DateTime.UtcNow - LastHeartbeat;
+                        LastHeartbeat = DateTime.UtcNow;
+                        OnHeartbeat?.Invoke(this);
+                        if (IsSleeping)
                         {
-                            type = "heartbeat_ack",
-                            time = delta.TotalMilliseconds
-                        });
+                            IsSleeping = false;
+                            OnWakeUp?.Invoke(this);
+                        }
+
+                        if (Session == null)
+                        {
+                            await Send(new
+                            {
+                                type = "heartbeat_ack",
+                                time = delta.TotalMilliseconds
+                            });
+                        }
+
+                        break;
                     }
-                }
-                else if (type == "deck")
-                {
-                    if (Validated)
+                    case "deck" when Validated:
                         continue;
-
-                    if (!TryValidateDeck(doc.RootElement, out var ids))
+                    case "deck":
                     {
-                        await Reject("Invalid Deck");
-                        return;
+                        if (!TryValidateDeck(doc.RootElement, out var ids))
+                        {
+                            await Reject("Invalid Deck");
+                            return;
+                        }
+
+                        DeckIds = ids;
+                        Validated = true;
+
+                        OnDeckReady?.Invoke(this);
+
+                        await Send(new { type = "deck_accepted" });
+                        break;
                     }
-
-                    DeckIds = ids;
-                    Validated = true;
-
-                    OnDeckReady?.Invoke(this);
-
-                    await Send(new { type = "deck_accepted" });
-                }
-                else if (type == "send" && Session != null)
-                {
-                    var text = doc.RootElement.GetProperty("text").GetString();
-                    if (text != null)
+                    case "game_request" when Session != null:
+                    {
+                        var text = doc.RootElement.GetProperty("data").GetRawText();
                         Session.HandleMessage(this, text);
+                        break;
+                    }
                 }
             }
         }
