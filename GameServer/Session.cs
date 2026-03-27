@@ -79,7 +79,7 @@ public class Session
             {
                 case "play_card":
                 {
-                    if (!doc.RootElement.TryGetProperty("handIndex", out var handIndexEl) ||
+                    if (!doc.RootElement.TryGetProperty("hand_index", out var handIndexEl) ||
                         handIndexEl.ValueKind != JsonValueKind.Number)
                     {
                         _ = from.Send(new
