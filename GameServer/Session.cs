@@ -333,11 +333,16 @@ public class Session
             });
 
         api.CardPlayed += e =>
-            _ = Broadcast(_ => new
+            _ = Broadcast(p =>
             {
-                type = "card_played",
-                card = CardMapper.ToDto(e.Card),
-                position = e.Position
+                var you = e.Card.Owner == p;
+                return new
+                {
+                    type = "card_played",
+                    card = CardMapper.ToDto(e.Card),
+                    position = e.Position,
+                    you = you
+                };
             });
     }
 
