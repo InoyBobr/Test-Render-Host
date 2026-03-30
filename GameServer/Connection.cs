@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public class Connection
 {
@@ -118,8 +119,11 @@ public class Connection
             Console.WriteLine("Send skipped: socket state = " + Socket.State);
             return;
         }
-
-        var json = JsonSerializer.Serialize(obj);
+        var options = new JsonSerializerOptions
+        {
+            Converters = { new JsonStringEnumConverter() }
+        };
+        var json = JsonSerializer.Serialize(obj, options);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         try

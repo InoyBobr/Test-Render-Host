@@ -40,6 +40,7 @@ public class GameAPI
     public event Action? GameStarted;
     public event Action<RoundStarted>? RoundStarted;
     public event Action<PlayerTurnStarted>? TurnStarted;
+    public event Action<PlayerRotationPhaseStarted>? RotationPhaseStarted; 
     public event Action<PlayerTurnEnded>? TurnEnded;
     public event Action? BattleStarted;
     public event Action? BattleEnded;
@@ -930,9 +931,13 @@ public class GameAPI
                 StartTurn(Player1);
                 return;
             case GameState.PlayPhase:
+            {
                 SetGameState(GameState.RotatePhase);
-                Bus.Publish(new PlayerRotationPhaseStarted(CurrentPlayer));
+                var e = new PlayerRotationPhaseStarted(CurrentPlayer);
+                RotationPhaseStarted?.Invoke(e);
+                Bus.Publish(e);
                 return;
+            }
             case GameState.RotatePhase:
             {
                 var e = new PlayerTurnEnded(CurrentPlayer);

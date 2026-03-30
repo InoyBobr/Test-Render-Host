@@ -122,7 +122,7 @@ public class Session
                         doc.RootElement.GetProperty("face").GetString()!,
                         true);
 
-                    int dir = doc.RootElement.GetProperty("dir").GetInt32();
+                    int dir = doc.RootElement.GetProperty("amount").GetInt32();
 
                     api.RotateFace(face, dir, player);
                     break;
@@ -189,6 +189,12 @@ public class Session
             _ = Broadcast(p => new
             {
                 type = "turn_started",
+                you = (p == e.Player)
+            });
+        api.RotationPhaseStarted += e =>
+            _ = Broadcast(p => new
+            {
+                type = "rotation_phase_started",
                 you = (p == e.Player)
             });
 
@@ -315,6 +321,13 @@ public class Session
                     success = e.Success,
                     error = e.Error
                 };
+            });
+        api.FaceRotated += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "face_rotated",
+                face = e.Face,
+                amount = e.AmountOfRotations
             });
 
         api.CardPlayedResult += result =>
