@@ -1,0 +1,9 @@
+{
+  "CardId": "Magic Stone",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": []
+}

@@ -1,0 +1,9 @@
+{
+  "CardId": "Moss Owl",
+  "Type": "Unit",
+  "basePower": 4,
+  "baseHealth": 4,
+  "color": "Green",
+  "keywords": [],
+  "abilities": []
+}

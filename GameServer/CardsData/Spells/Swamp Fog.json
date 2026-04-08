@@ -1,0 +1,9 @@
+{
+  "CardId": "Swamp Fog",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Green",
+  "keywords": [],
+  "abilities": []
+}

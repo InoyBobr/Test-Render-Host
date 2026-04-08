@@ -1,0 +1,9 @@
+{
+  "CardId": "Twohead Wolf",
+  "Type": "Unit",
+  "basePower": 4,
+  "baseHealth": 4,
+  "color": "Red",
+  "keywords": [],
+  "abilities": []
+}

@@ -1,0 +1,9 @@
+{
+  "CardId": "Bug Tornado",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Red",
+  "keywords": [],
+  "abilities": []
+}

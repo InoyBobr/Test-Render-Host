@@ -1,0 +1,9 @@
+{
+  "CardId": "Giant Oak",
+  "Type": "Unit",
+  "basePower": 0,
+  "baseHealth": 8,
+  "color": "Green",
+  "keywords": [],
+  "abilities": []
+}

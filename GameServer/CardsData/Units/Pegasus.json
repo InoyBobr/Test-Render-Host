@@ -1,0 +1,9 @@
+{
+  "CardId": "Pegasus",
+  "Type": "Unit",
+  "basePower": 4,
+  "baseHealth": 4,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": []
+}
