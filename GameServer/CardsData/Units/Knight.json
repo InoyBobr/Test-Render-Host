@@ -5,5 +5,12 @@
   "baseHealth": 4,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "knight_ability",
+      "Parameters": [
+        {"key" : "damage", "value" : 1}
+      ]
+    }
+  ]
 }

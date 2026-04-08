@@ -357,6 +357,29 @@ public class Session
                     you = you
                 };
             });
+        api.KeywordAdded += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "keyword_added",
+                keyword = e.Keyword,
+                position = e.Card.Position,
+                source = e.Source?.Position
+            });
+        api.KeywordRemoved += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "keyword_removed",
+                keyword = e.Keyword,
+                position = e.Card.Position,
+                source = e.Source?.Position
+            });
+        api.ColorChanged += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "color_changed",
+                position = e.Position,
+                color = e.Color
+            });
     }
 
     // =============================================================================================

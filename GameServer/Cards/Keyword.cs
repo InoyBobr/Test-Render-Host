@@ -6,5 +6,6 @@ public enum Keyword
     Flying,
     Taunt,
     Silenced,
-    Shield
+    Shield,
+    Sleeping
 }

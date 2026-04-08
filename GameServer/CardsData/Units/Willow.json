@@ -5,5 +5,12 @@
   "baseHealth": 4,
   "color": "Green",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "willow_ability",
+      "Parameters": [
+        {"key" : "damage", "value" : 1}
+      ]
+    }
+  ]
 }

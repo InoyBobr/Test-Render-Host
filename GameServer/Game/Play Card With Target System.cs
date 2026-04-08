@@ -185,6 +185,11 @@ public class GameContext
 
         return null;
     }
+
+    public StickerColor GetColor(int pos)
+    {
+        return Board.GetColor(pos);
+    }
 }
 
 

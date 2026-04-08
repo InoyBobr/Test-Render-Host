@@ -191,7 +191,61 @@ public class RandomCardBuffRequestEvent : IGameEvent
     }
 }
 
-//--- Вращение кубика ---
+public class AddKeywordRequestEvent : UnitEvent
+{
+    public Keyword Keyword;
+    public CardInstance? Source;
+    public bool Allowed = true;
+
+    public AddKeywordRequestEvent(Keyword keyword, UnitInstance card, CardInstance? source)
+    {
+        Keyword = keyword;
+        Card = card;
+        Source = source;
+    }
+}
+
+public class KeywordAddedEvent : UnitEvent
+{
+    public readonly Keyword Keyword;
+    public readonly CardInstance? Source;
+
+    public KeywordAddedEvent(Keyword keyword, UnitInstance card, CardInstance? source)
+    {
+        Keyword = keyword;
+        Card = card;
+        Source = source;
+    }
+}
+
+public class RemoveKeywordRequestEvent : UnitEvent
+{
+    public Keyword Keyword;
+    public CardInstance? Source;
+    public bool Allowed = true;
+
+    public RemoveKeywordRequestEvent(Keyword keyword, UnitInstance card, CardInstance? source)
+    {
+        Keyword = keyword;
+        Card = card;
+        Source = source;
+    }
+}
+
+public class KeywordRemovedEvent : UnitEvent
+{
+    public readonly Keyword Keyword;
+    public readonly CardInstance? Source;
+
+    public KeywordRemovedEvent(Keyword keyword, UnitInstance card, CardInstance? source)
+    {
+        Keyword = keyword;
+        Card = card;
+        Source = source;
+    }
+}
+
+//--- Изменение кубика ---
 public class FaceRotatedEvent : IGameEvent
 {
     public readonly Face Face;
@@ -204,6 +258,35 @@ public class FaceRotatedEvent : IGameEvent
         Face = face;
         AmountOfRotations = amountOfRotations;
         Player = player;
+    }
+}
+
+public class ChangeColorRequestEvent : IGameEvent
+{
+    public int Position;
+    public StickerColor Color;
+    public CardInstance Source;
+    public bool Allowed = true;
+
+    public ChangeColorRequestEvent(int position, StickerColor color, CardInstance source)
+    {
+        Position = position;
+        Color = color;
+        Source = source;
+    }
+}
+
+public class ColorChangedEvent : IGameEvent
+{
+    public readonly int Position;
+    public readonly StickerColor Color;
+    public readonly CardInstance Source;
+
+    public ColorChangedEvent(int position, StickerColor color, CardInstance source)
+    {
+        Position = position;
+        Color = color;
+        Source = source;
     }
 }
 
@@ -330,10 +413,9 @@ public class GetContextEvent : IGameEvent
     public CardInstance Card;
     public GameContext Ctx;
 
-    public GetContextEvent(CardInstance card, GameContext ctx)
+    public GetContextEvent(CardInstance card)
     {
         Card = card;
-        Ctx = ctx;
     }
 }
 

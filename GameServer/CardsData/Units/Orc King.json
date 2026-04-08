@@ -5,5 +5,10 @@
   "baseHealth": 4,
   "color": "Red",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "orc_king_ability",
+      "Parameters": []
+    }
+  ]
 }

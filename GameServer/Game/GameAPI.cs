@@ -56,6 +56,9 @@ public class GameAPI
     public event Action<CardPlayedEvent>? CardPlayed; 
     public event Action<RotateFaceResult>? FaceRotatedResult;
     public event Action<FaceRotatedEvent>? FaceRotated;
+    public event Action<KeywordAddedEvent>? KeywordAdded;
+    public event Action<KeywordRemovedEvent>? KeywordRemoved;
+    public event Action<ColorChangedEvent>? ColorChanged;
     
 
 
@@ -215,6 +218,14 @@ public class GameAPI
                 }
             }
 
+            if (playable.Count == 0)
+            {
+                CardPlayedResult?.Invoke(new PlayCardResult
+                {
+                    Success = false,
+                    Error = "No free space"
+                });
+            }
             CardPlayedResult?.Invoke(new PlayCardResult
             {
                 Success = false,
@@ -572,17 +583,18 @@ public class GameAPI
         Bus.StartBattleMode();
         Bus.Publish(new BattlePhaseStarted());
         foreach (var card in Board.GetAllCards())
-        {   
+        {
             //Атакует только быстрая атака и двойная атака
-            if (card.Keywords.Contains(Keyword.QuickAttack) || card.Keywords.Contains(Keyword.DoubleAttack))
+            if (card.Keywords.Contains(Keyword.Sleeping))
+                continue;
+            if (!card.Keywords.Contains(Keyword.QuickAttack) && !card.Keywords.Contains(Keyword.DoubleAttack))
+                continue;
+            var enemies = Board.GetEnemyCardsOnFace(card);
+            foreach (var enemy in enemies)
             {
-                var enemies = Board.GetEnemyCardsOnFace(card);
-                foreach (var enemy in enemies)
                 {
-                    {
-                        Console.WriteLine("Quick attack " + enemy.InstanceId + " " + card.InstanceId);
-                        Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
-                    }
+                    Console.WriteLine("Quick attack " + enemy.InstanceId + " " + card.InstanceId);
+                    Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
                 }
             }
         }
@@ -594,21 +606,21 @@ public class GameAPI
         foreach (var card in Board.GetAllCards())
         {
             //Атакует только обычная атака и двойная атака
-            if (!card.Keywords.Contains(Keyword.QuickAttack) || card.Keywords.Contains(Keyword.DoubleAttack))
+            if (card.Keywords.Contains(Keyword.Sleeping))
+                continue;
+            if (card.Keywords.Contains(Keyword.QuickAttack) && !card.Keywords.Contains(Keyword.DoubleAttack)) continue;
+            var enemies = Board.GetEnemyCardsOnFace(card);
+            foreach (var enemy in enemies)
             {
-                var enemies = Board.GetEnemyCardsOnFace(card);
-                foreach (var enemy in enemies)
                 {
-                    {
-                        Console.WriteLine("Normal attack " + enemy.InstanceId + " " + card.InstanceId);
-                        Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
-                    }
+                    Console.WriteLine("Normal attack " + enemy.InstanceId + " " + card.InstanceId);
+                    Bus.Publish(new CardCombatDamageRequestEvent(enemy, card.CurrentPower, card));
                 }
             }
         }
+        Bus.Publish(new BattlePhaseEnded());
         ResolveCombatDamage();
         Bus.EndBattleMode(); 
-        Bus.Publish(new BattlePhaseEnded());
     }
 
     private void PostBattlePhase()
@@ -763,7 +775,6 @@ public class GameAPI
         _pendingCombatDamage.Clear();
     }
     
-    
     private void BuffCard(CardBuffRequestEvent e)
     {
         if (e.Card.Zone is CardZone.Discard or CardZone.PlayerPlaceHolder)
@@ -774,9 +785,46 @@ public class GameAPI
         e.Unit.Buff(buffEvent);
     }
 
-    
+    private void AddKeyword(AddKeywordRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        if (e.Unit.Keywords.Contains(e.Keyword)) return;
+        e.Unit.Keywords.Add(e.Keyword);
+        var ev = new KeywordAddedEvent(e.Keyword, e.Unit, e.Source);
+        KeywordAdded?.Invoke(ev);
+        Bus.Publish(ev);
+    }
+
+    private void RemoveKeyword(RemoveKeywordRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        if (e.Unit.Keywords.Contains(e.Keyword)) return;
+        e.Unit.Keywords.Remove(e.Keyword);
+        var ev = new KeywordRemovedEvent(e.Keyword, e.Unit, e.Source);
+        KeywordRemoved?.Invoke(ev);
+        Bus.Publish(ev);
+    }
+
+    //Методы куба
+
+    private void ChangeColor(ChangeColorRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        Board.ChangeColor(e.Position, e.Color);
+        var ev = new ColorChangedEvent(e.Position, e.Color, e.Source);
+        ColorChanged?.Invoke(ev);
+        Bus.Publish(ev);
+    }
 
     // 9. Вспомогательные методы
+
+    private void GetContext(GetContextEvent e)
+    {
+        e.Ctx = new GameContext(Board, e.Card.Owner);
+    }
     
     //10. Методы уведомлений
     private void BuffNotify(CardBuffedEvent e)
@@ -912,6 +960,10 @@ public class GameAPI
         Bus.Subscribe<CardBuffedEvent>(BuffNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardNonCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<GetContextEvent>(GetContext, SubscriberOwnerType.API, this);
+        Bus.Subscribe<AddKeywordRequestEvent>(AddKeyword, SubscriberOwnerType.API, this);
+        Bus.Subscribe<RemoveKeywordRequestEvent>(RemoveKeyword, SubscriberOwnerType.API, this);
+        Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);
         
     }
     private void UnsubscribeFromCardEvents(){}

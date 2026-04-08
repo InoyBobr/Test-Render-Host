@@ -5,5 +5,10 @@
   "baseHealth": 4,
   "color": "Red",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "ogre_ability",
+      "Parameters": []
+    }
+  ]
 }

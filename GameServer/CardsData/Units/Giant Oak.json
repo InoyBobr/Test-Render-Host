@@ -5,5 +5,13 @@
   "baseHealth": 8,
   "color": "Green",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "oak_ability",
+      "Parameters": [
+        {"key" : "powerBuff", "value" : 1},
+        {"key" : "healthBuff", "value" : 1}
+      ]
+    }
+  ]
 }

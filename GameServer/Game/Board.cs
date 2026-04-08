@@ -58,6 +58,14 @@ public class Board
     }
 
     // --- ОПЕРАЦИИ ---
+
+    public void ChangeColor(int pos, StickerColor color)
+    {
+        if (!IsValidPosition(pos))
+            throw new Exception("Invalid board position");
+        _stickerColors[pos] = color;
+    }
+    
     public void PlaceCard(UnitInstance card, int pos)
     {
         if (!IsValidPosition(pos))

@@ -4,6 +4,13 @@
   "basePower": 4,
   "baseHealth": 4,
   "color": "Red",
-  "keywords": [],
-  "abilities": []
+  "keywords": ["Flying"],
+  "abilities": [
+    {
+      "AbilityId": "vulture_ability",
+      "Parameters": [
+        {"key" : "powerBuff", "value" : 1}
+      ]
+    }
+  ]
 }
