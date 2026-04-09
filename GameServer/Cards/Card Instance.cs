@@ -21,7 +21,7 @@ public abstract class CardInstance
     public int Position;
     public CardZone Zone;
 
-    protected GameAPI _api;
+    public GameAPI _api { get; init; }
     public EventBus Bus { get; }
 
     protected CardInstance(CardData def, Player owner, GameAPI api, CardZone zone = CardZone.Deck)

@@ -17,9 +17,7 @@ public class WillowAbility : AbilityLogic
     {
         if (!OnBoardAbilityActive)
             return;
-        var contextEvent = new GetContextEvent(Owner);
-        Bus.Publish(contextEvent);
-        var ctx = contextEvent.Ctx;
+        var ctx = Owner._api.GetContext(Owner.Owner);
         if (ctx == null)
             return;
         var allEnemies = ctx.GetEnemyCards(Owner);

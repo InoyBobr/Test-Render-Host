@@ -21,9 +21,8 @@ public class OrcKingAbility : AbilityLogic
             return;
         if (e.Card.Owner != Owner.Owner || e.Card.Color != StickerColor.Red )
             return;
-        var contextEvent = new GetContextEvent(Owner);
-        Bus.Publish(contextEvent);
-        var ctx = contextEvent.Ctx;
+        
+        var ctx = Owner._api.GetContext(Owner.Owner);
         if (ctx == null)
         {
             Console.WriteLine("No context for orc king");

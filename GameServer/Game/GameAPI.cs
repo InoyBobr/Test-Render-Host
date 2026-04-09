@@ -821,10 +821,9 @@ public class GameAPI
 
     // 9. Вспомогательные методы
 
-    private void GetContext(GetContextEvent e)
+    public GameContext GetContext(Player player)
     {
-        e.Ctx = new GameContext(Board, e.Card.Owner);
-        Console.WriteLine("Give context");
+        return new GameContext(Board, player);
     }
     
     //10. Методы уведомлений
@@ -961,7 +960,6 @@ public class GameAPI
         Bus.Subscribe<CardBuffedEvent>(BuffNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardNonCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
-        Bus.Subscribe<GetContextEvent>(GetContext, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddKeywordRequestEvent>(AddKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveKeywordRequestEvent>(RemoveKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);

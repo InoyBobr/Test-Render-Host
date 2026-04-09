@@ -408,16 +408,6 @@ public class CardMovedToDiscard : CardEvent
 
 //---
 
-public class GetContextEvent : IGameEvent
-{
-    public CardInstance Card;
-    public GameContext Ctx;
-
-    public GetContextEvent(CardInstance card)
-    {
-        Card = card;
-    }
-}
 
 public class RequestTargetChoiceEvent : IGameEvent
 {
