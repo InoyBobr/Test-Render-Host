@@ -1,4 +1,4 @@
-[AbilityId("ork_king_ability")]
+[AbilityId("orc_king_ability")]
 public class OrcKingAbility : AbilityLogic
 {
     public OrcKingAbility(AbilityState state) : base(state) {}
