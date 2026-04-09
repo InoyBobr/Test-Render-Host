@@ -37,7 +37,7 @@ public class BookPortalAbility : AbilityLogic
             }
         }
 
-        return faces >= 4;
+        return faces >= 6;
     }
     
 }
