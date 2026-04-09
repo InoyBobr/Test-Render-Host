@@ -640,6 +640,10 @@ public class GameAPI
             if (card.Keywords.Contains(Keyword.Sleeping))
             {
                 card.Keywords.Remove(Keyword.Sleeping);
+                var ev = new KeywordRemovedEvent(Keyword.Sleeping, card, null);
+                KeywordRemoved?.Invoke(ev);
+                Bus.Publish(ev);
+                
             }
         }
     }

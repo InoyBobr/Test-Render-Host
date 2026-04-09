@@ -1,9 +1,9 @@
 {
   "CardId": "Leafcuter",
   "Type": "Unit",
-  "basePower": 4,
+  "basePower": 3,
   "baseHealth": 4,
   "color": "Green",
-  "keywords": [],
+  "keywords": ["QuickAttack"],
   "abilities": []
 }
