@@ -25,12 +25,19 @@ public class OrcKingAbility : AbilityLogic
         Bus.Publish(contextEvent);
         var ctx = contextEvent.Ctx;
         if (ctx == null)
+        {
+            Console.WriteLine("No context for orc king");
             return;
+        }
         var face = Board.GetFaceOfSticker(Owner.Position);
         var indexes = Board.FaceRotationMaps[face];
         var emptyNonRed = indexes.Where(index => ctx.GetCardAt(index) == null && ctx.GetColor(index) != StickerColor.Red).ToList();
-        if(emptyNonRed.Count == 0)
+        if (emptyNonRed.Count == 0)
+        {
+            Console.WriteLine("No actual stickers for orc king");
             return;
+        }
+
         var sticker = emptyNonRed[_random.Next(emptyNonRed.Count)];
         Bus.Publish(new ChangeColorRequestEvent(sticker, StickerColor.Red, Owner));
     }
