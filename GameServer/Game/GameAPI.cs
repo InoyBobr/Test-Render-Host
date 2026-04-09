@@ -630,6 +630,18 @@ public class GameAPI
         Bus.EndBattleMode();
         Bus.Publish(new PostBattlePhaseEnded());
         BattleEnded?.Invoke();
+        AwakeAll();
+    }
+
+    private void AwakeAll()
+    {
+        foreach (var card in Board.GetAllCards())
+        {
+            if (card.Keywords.Contains(Keyword.Sleeping))
+            {
+                card.Keywords.Remove(Keyword.Sleeping);
+            }
+        }
     }
 
     // 7. Подсчёт очков
