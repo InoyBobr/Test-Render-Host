@@ -7,17 +7,17 @@ public class OakAbility : AbilityLogic
     
     public override void OnGain()
     {
-        Bus.Subscribe<BattlePhaseEnded>(OnBattleEnd, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<PostBattlePhaseStarted>(OnBattleEnd, SubscriberOwnerType.Card, Owner);
         Bus.Subscribe<CardCombatDamagedEvent>(OnCardCombatDamaged, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<BattlePhaseEnded>(OnBattleEnd, Owner);
+        Bus.Unsubscribe<PostBattlePhaseStarted>(OnBattleEnd, Owner);
         Bus.Unsubscribe<CardCombatDamagedEvent>(OnCardCombatDamaged, Owner);
     }
     
-    private void OnBattleEnd(BattlePhaseEnded e)
+    private void OnBattleEnd(PostBattlePhaseStarted e)
     {
         if (!OnBoardAbilityActive)
             return;
@@ -36,7 +36,6 @@ public class OakAbility : AbilityLogic
         if (e.Card == Owner || e.Source == Owner)
         {
             active = true;
-            Console.WriteLine("Oak");
         }
     }
     
