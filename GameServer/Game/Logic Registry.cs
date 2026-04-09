@@ -26,7 +26,10 @@ public static class AbilityLogicRegistry
     public static AbilityLogic Create(string abilityId, AbilityState state)
     {
         if (!map.TryGetValue(abilityId, out var type))
+        {
+            Console.WriteLine($"AbilityLogic not found: {abilityId}");
             throw new Exception($"AbilityLogic not found: {abilityId}");
+        }
 
         return (AbilityLogic)Activator.CreateInstance(type, state)!;
     }
