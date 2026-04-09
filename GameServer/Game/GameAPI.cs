@@ -824,6 +824,7 @@ public class GameAPI
     private void GetContext(GetContextEvent e)
     {
         e.Ctx = new GameContext(Board, e.Card.Owner);
+        Console.WriteLine("Give context");
     }
     
     //10. Методы уведомлений
