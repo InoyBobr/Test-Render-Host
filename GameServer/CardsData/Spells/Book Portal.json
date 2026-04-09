@@ -5,5 +5,12 @@
   "baseHealth": 0,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "book_portal_ability",
+      "Parameters": [
+        {"key" : "amount", "value" : 3}
+      ]
+    }
+  ]
 }

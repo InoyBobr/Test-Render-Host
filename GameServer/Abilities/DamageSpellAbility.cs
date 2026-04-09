@@ -1,7 +1,7 @@
-[AbilityId("damage_on_play_spell")]
-public class DamageSpellAbility : AbilityLogic
+[AbilityId("fireball_ability")]
+public class FireballAbility : AbilityLogic
 {
-    public DamageSpellAbility(AbilityState state) : base(state) {}
+    public FireballAbility(AbilityState state) : base(state) {}
 
     public override void OnGain()
     {

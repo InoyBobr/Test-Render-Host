@@ -7,7 +7,7 @@
   "keywords": [],
   "abilities": [
     {
-      "AbilityId": "damage_on_play_spell",
+      "AbilityId": "fireball_ability",
       "Parameters": [
         {"key" : "damage", "value" : 3}
       ]

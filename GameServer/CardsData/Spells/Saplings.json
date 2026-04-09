@@ -5,5 +5,10 @@
   "baseHealth": 0,
   "color": "Green",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "saplings_ability",
+      "Parameters": []
+    }
+  ]
 }
