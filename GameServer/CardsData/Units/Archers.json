@@ -5,5 +5,12 @@
   "baseHealth": 4,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "archers_ability",
+      "Parameters": [
+        {"key" : "damageBuff", "value" : 1}
+      ]
+    }
+  ]
 }

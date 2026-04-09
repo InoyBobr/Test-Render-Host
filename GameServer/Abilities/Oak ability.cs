@@ -36,6 +36,7 @@ public class OakAbility : AbilityLogic
         if (e.Card == Owner || e.Source == Owner)
         {
             active = true;
+            Console.WriteLine("Oak");
         }
     }
     

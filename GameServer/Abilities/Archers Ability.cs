@@ -1,5 +1,4 @@
-namespace GameServer.Abilities;
-
+[AbilityId("archers_ability")]
 public class ArchersAbility : AbilityLogic
 {
     public ArchersAbility(AbilityState state) : base(state) {}
