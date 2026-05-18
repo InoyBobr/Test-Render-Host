@@ -9,9 +9,13 @@ var app = builder.Build();
 
 app.UseWebSockets();
 
+CardDatabase.LoadFromFolder("CardsData");
+
 var matchmaker = new Matchmaker();
 var testingObj = new TestingClass();
 testingObj.Main();
+
+
 
 app.Map("/ws", async context =>
 {

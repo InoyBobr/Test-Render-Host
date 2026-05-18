@@ -16,10 +16,10 @@ public class GameAPI
     private GameState _gameState = GameState.Start;
 
     // Поле
-    public Board Board { get; private set; } = new Board();
+    public Board Board { get; } = new Board();
 
     // EventBus для передачи всех игровых событий
-    public EventBus Bus { get; private set; } = new EventBus();
+    public EventBus Bus { get; } = new EventBus();
 
     // Текущий игрок, чей ход
     public Player? CurrentPlayer { get; private set; }
@@ -32,7 +32,10 @@ public class GameAPI
     public int Round { get; private set; } = 1;
 
     // Количество карт, которое игрок берёт в начале игры или хода
-    public int StartDrawCount { get; set; } = 4;
+    public const int StartDrawCount = 4;
+
+    private int unitCounter = 0;
+    private int hoardCounter = 0;
     
     private ChoiceContext? _pendingChoice;
     private readonly Dictionary<UnitInstance, List<CardCombatDamageRequestEvent>> _pendingCombatDamage = new();
@@ -58,6 +61,7 @@ public class GameAPI
     public event Action<FaceRotatedEvent>? FaceRotated;
     public event Action<KeywordAddedEvent>? KeywordAdded;
     public event Action<KeywordRemovedEvent>? KeywordRemoved;
+    public event Action<KeywordsRemovedEvent>? KeywordsRemoved;
     public event Action<ColorChangedEvent>? ColorChanged;
     
 
@@ -102,6 +106,10 @@ public class GameAPI
         TurnStarted?.Invoke(e);
         Bus.Publish(e);
         TryDrawCards(player, 1);
+        unitCounter = 1;
+        if (Round == 1)
+            unitCounter = 3;
+        hoardCounter = 0;
     }
 
     public void EndTurn(Player player)
@@ -128,6 +136,8 @@ public class GameAPI
 
     private void DrawCards(CardDrawRequestEvent e)
     {
+        if (!e.Allowed)
+            return;
         var minimum = Math.Min(e.Amount, e.Player.GetDeck().Count);
         for (int i = 0; i < minimum; i++)
         {
@@ -170,8 +180,29 @@ public class GameAPI
 
         var card = player.GetHand()[handIndex];
         bool isUnit = card is UnitInstance;
+        int pScore, eScore;
+        if (CurrentPlayer == Player1)
+        {
+            pScore = Player1Score;
+            eScore = Player2Score;
+        }
+        else
+        { 
+            pScore = Player2Score;
+            eScore = Player1Score;
+        }
 
-        var baseContext = new GameContext(Board, CurrentPlayer);
+        var baseContext = new GameContext(Board, CurrentPlayer, pScore, eScore);
+
+        if (isUnit)
+        {
+            if (!((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && unitCounter <= 0 ||
+                ((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && unitCounter <= 0 && hoardCounter <= 0 )
+            {
+                CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Unit limit", Player = player});
+                return;
+            }
+        }
 
         // 2. Проверка CanBePlayed
         foreach (var ability in card.Abilities)
@@ -198,7 +229,20 @@ public class GameAPI
 
                     if (card.Color != Board.GetColor(pos))
                         continue;
-
+                    if (Round == 1)
+                    {
+                        var face = Board.GetFaceOfSticker(pos);
+                        if (CurrentPlayer == Player1)
+                        {
+                            if (face is Face.Back or Face.Bottom or Face.Right)
+                                continue;
+                        }
+                        else
+                        {
+                            if (face is Face.Front or Face.Top or Face.Left)
+                                continue;
+                        }
+                    }
                     playable.Add(pos);
                 }
             }
@@ -263,7 +307,7 @@ public class GameAPI
 
         // 5. PreviewContext
 
-        var previewContext = isUnit ? new GameContext(Board, CurrentPlayer).WithPreviewPlacement(card, position.Value) : baseContext;
+        var previewContext = isUnit ? new GameContext(Board, CurrentPlayer, pScore, eScore).WithPreviewPlacement(card, position.Value) : baseContext;
 
         // 6. Сбор target request
         var targetRequestFinal = new TargetRequest();
@@ -392,8 +436,19 @@ public class GameAPI
 
         if (isUnit)
         {
+            if (((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && hoardCounter > 0)
+            {
+                hoardCounter--;
+            }
+            else
+            {
+                unitCounter--;
+                if (((UnitInstance)card).Keywords.Contains(Keyword.Hoard))
+                {
+                    hoardCounter++;
+                }
+            }
             Board.PlaceCard((UnitInstance)card, position.Value);
-
             card.Zone = CardZone.Board;
             card.Position = position.Value;
         }
@@ -762,6 +817,21 @@ public class GameAPI
         }
         e.Unit.TakeDamage(new CardNonCombatDamagedEvent(e.Unit, e.Damage, e.Source));
     }
+
+    private void DamageRandomCard(RandomCardDamageRequestEvent e)
+    {
+        if (!e.Allowed || e.Damage <= 0)
+            return;
+        var targets = GetSelectedCards(e.Source, e.Selector);
+        foreach (var target in targets)
+        {
+            if (target is UnitInstance unit)
+            {
+                var damageRequestEvent = new CardNonCombatDamageRequestEvent(unit, Math.Max(0, e.Damage), e.Source);
+                ApplyNonCombatDamage(damageRequestEvent);
+            }
+        }
+    }
     
     private void ResolveCombatDamage()
     {
@@ -801,6 +871,21 @@ public class GameAPI
         e.Unit.Buff(buffEvent);
     }
 
+    private void BuffRandomCard(RandomCardBuffRequestEvent e)
+    {
+        if (!e.Allowed || e.PowerDelta <= 0 && e.HealthDelta <= 0)
+            return;
+        var targets = GetSelectedCards(e.Source, e.Selector);
+        foreach (var target in targets)
+        {
+            if (target is UnitInstance unit)
+            {
+                var buffEvent = new CardBuffedEvent(unit, Math.Max(0, e.PowerDelta), Math.Max(0, e.HealthDelta), e.Source);
+                unit.Buff(buffEvent);
+            }
+        }
+    }
+
     private void AddKeyword(AddKeywordRequestEvent e)
     {
         if (!e.Allowed)
@@ -823,6 +908,24 @@ public class GameAPI
         Bus.Publish(ev);
     }
 
+    private void RemoveAllKeywords(RemoveAllKeywordsRequestEvent e)
+    {
+        if (!e.Allowed || e.Unit.Keywords.Count == 0)
+            return;
+        var ev = new KeywordsRemovedEvent(e.Unit.Keywords, e.Unit, e.Source);
+        e.Unit.Keywords.Clear();
+        KeywordsRemoved?.Invoke(ev);
+        Bus.Publish(ev);
+    }
+
+    private void AddAbility(AddAbilityRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        var state = new AbilityState(e.AbilityId, e.Parameters, e.Card);
+        e.Card.AddAbility(state);
+    }
+
     //Методы куба
 
     private void ChangeColor(ChangeColorRequestEvent e)
@@ -839,7 +942,18 @@ public class GameAPI
 
     public GameContext GetContext(Player player)
     {
-        return new GameContext(Board, player);
+        int pScore, eScore;
+        if (CurrentPlayer == Player1)
+        {
+            pScore = Player1Score;
+            eScore = Player2Score;
+        }
+        else
+        { 
+            pScore = Player2Score;
+            eScore = Player1Score;
+        }
+        return new GameContext(Board, player, pScore, eScore);
     }
     
     //10. Методы уведомлений
@@ -900,6 +1014,11 @@ public class GameAPI
                 Board.GetFaceOfSticker(u.Position) == sourceFace);
         }
 
+        if (selector.ExcludeSelf)
+        {
+            candidates = candidates.Where(c => c != source);
+        }
+
         // 3 Stat filter (ONLY UNITS)
         if (selector.Stat != StatConstraint.Any)
         {
@@ -916,6 +1035,7 @@ public class GameAPI
                     .Where(u => u.CurrentPower == min)
                     .ToList();
             }
+            
             List<UnitInstance> GetStrongest(List<UnitInstance> units)
             {
                 int max = units.Max(u => u.CurrentPower);
@@ -925,11 +1045,33 @@ public class GameAPI
                     .ToList();
             }
             
+            List<UnitInstance> GetMostHealth(List<UnitInstance> units)
+            {
+                int max = units.Max(u => u.CurrentHealth);
+
+                return units
+                    .Where(u => u.CurrentHealth == max)
+                    .ToList();
+            }
+            
+            List<UnitInstance> GetLeastHealth(List<UnitInstance> units)
+            {
+                int min = units.Min(u => u.CurrentHealth);
+
+                return units
+                    .Where(u => u.CurrentHealth == min)
+                    .ToList();
+            }
+            
             units = selector.Stat switch
             {
                 StatConstraint.Weakest => GetWeakest(units),
 
                 StatConstraint.Strongest => GetStrongest(units),
+                
+                StatConstraint.MostHealth => GetMostHealth(units),
+                
+                StatConstraint.LeastHealth => GetLeastHealth(units),
 
                 _ => units
             };
@@ -968,17 +1110,21 @@ public class GameAPI
         Bus.Subscribe<PlayerScoreRequestEvent>(AwardPoints, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardCombatDamageRequestEvent>(ApplyCombatDamage, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardNonCombatDamageRequestEvent>(ApplyNonCombatDamage, SubscriberOwnerType.API, this);
+        Bus.Subscribe<RandomCardDamageRequestEvent>(DamageRandomCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardDrawRequestEvent>(DrawCards, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardKillRequestEvent>(KillCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardKilledEvent>(RemoveDeadCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardBuffRequestEvent>(BuffCard, SubscriberOwnerType.API, this);
+        Bus.Subscribe<RandomCardBuffRequestEvent>(BuffRandomCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<RequestTargetChoiceEvent>(OnRequestTargetChoice, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardBuffedEvent>(BuffNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardNonCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddKeywordRequestEvent>(AddKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveKeywordRequestEvent>(RemoveKeyword, SubscriberOwnerType.API, this);
+        Bus.Subscribe<RemoveAllKeywordsRequestEvent>(RemoveAllKeywords, SubscriberOwnerType.API, this);
         Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);
+        Bus.Subscribe<AddAbilityRequestEvent>(AddAbility, SubscriberOwnerType.API, this);
         
     }
     private void UnsubscribeFromCardEvents(){}

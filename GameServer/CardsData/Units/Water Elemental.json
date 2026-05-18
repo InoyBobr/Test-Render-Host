@@ -5,5 +5,12 @@
   "baseHealth": 4,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "water_elemental_ability",
+      "Parameters": [
+        {"key" : "damage", "value" : 2}
+      ]
+    }
+  ]
 }

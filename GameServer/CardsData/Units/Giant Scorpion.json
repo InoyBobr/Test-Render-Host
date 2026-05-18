@@ -5,5 +5,10 @@
   "baseHealth": 4,
   "color": "Red",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "add_curse",
+      "Parameters": []
+    }
+  ]
 }

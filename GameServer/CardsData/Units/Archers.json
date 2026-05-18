@@ -1,10 +1,10 @@
 {
   "CardId": "Archers",
   "Type": "Unit",
-  "basePower": 4,
-  "baseHealth": 4,
+  "basePower": 2,
+  "baseHealth": 5,
   "color": "Blue",
-  "keywords": [],
+  "keywords": ["Shield"],
   "abilities": [
     {
       "AbilityId": "archers_ability",

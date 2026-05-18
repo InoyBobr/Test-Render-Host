@@ -1,49 +1,46 @@
-[AbilityId("knight_ability")]
-public class Knight_Ability : AbilityLogic
+namespace GameServer.Abilities;
+[AbilityId("add_curse")]
+public class Add_Curse_Ability : AbilityLogic
 {
-    public Knight_Ability(AbilityState state) : base(state) {}
+    public Add_Curse_Ability(AbilityState state) : base(state) {}
     
     public override void OnGain()
     {
-        Bus.Subscribe<CardPlayedEvent>(DealDamageOnPlay, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<CardPlayedEvent>(CurseOnPlay, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<CardPlayedEvent>(DealDamageOnPlay, Owner);
+        Bus.Unsubscribe<CardPlayedEvent>(CurseOnPlay, Owner);
     }
 
-    private void DealDamageOnPlay(CardPlayedEvent e)
+    private void CurseOnPlay(CardPlayedEvent e)
     {
         if (e.Card != Owner)
             return;
-        if (!State.CardTargets.TryGetValue("damageTarget", out var targets))
-            return;
-        if (!State.IntValues.TryGetValue("damage", out var damage))
+        if (!State.CardTargets.TryGetValue("curseTarget", out var targets))
             return;
         foreach (var target in targets)
         {
             if (target is UnitInstance unit)
             {
-                Bus.Publish(new CardNonCombatDamageRequestEvent(unit, damage, Owner));
+                Bus.Publish(new AddAbilityRequestEvent(unit, "curse", []));
             }
         }
     }
     
     public override List<TargetOptionGroup>? GetTargetOptions(GameContext ctx)
     {
-        var count = State.IntValues.GetValueOrDefault("count", 1);
         var enemies = ctx.GetEnemyCards(Owner);
         var positions = enemies.Select(u => u.Position).ToList();
         TargetOptionGroup target = new TargetOptionGroup
         {
-            Key = "damageTarget",
-            Count = Math.Min(count, positions.Count),
+            Key = "curseTarget",
+            Count = Math.Min(1, positions.Count),
             Type = TargetType.BoardPosition,
             ValidValues = positions,
             Distinct = true
         };
         return new List<TargetOptionGroup> { target };
     }
-    
 }

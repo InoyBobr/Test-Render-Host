@@ -1,21 +1,22 @@
-[AbilityId("knight_ability")]
-public class Knight_Ability : AbilityLogic
+[AbilityId("poke_enemy_every_turn")]
+public class Poke_Enemy_Every_Turn : AbilityLogic
 {
-    public Knight_Ability(AbilityState state) : base(state) {}
+    public Poke_Enemy_Every_Turn(AbilityState state) : base(state) {}
+    
     
     public override void OnGain()
     {
-        Bus.Subscribe<CardPlayedEvent>(DealDamageOnPlay, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<PlayerTurnEnded>(DealDamageAfterEndTurn, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<CardPlayedEvent>(DealDamageOnPlay, Owner);
+        Bus.Unsubscribe<PlayerTurnEnded>(DealDamageAfterEndTurn, Owner);
     }
-
-    private void DealDamageOnPlay(CardPlayedEvent e)
+    
+    private void DealDamageAfterEndTurn(PlayerTurnEnded e)
     {
-        if (e.Card != Owner)
+        if (e.Player != Owner.Owner)
             return;
         if (!State.CardTargets.TryGetValue("damageTarget", out var targets))
             return;
@@ -32,18 +33,16 @@ public class Knight_Ability : AbilityLogic
     
     public override List<TargetOptionGroup>? GetTargetOptions(GameContext ctx)
     {
-        var count = State.IntValues.GetValueOrDefault("count", 1);
         var enemies = ctx.GetEnemyCards(Owner);
         var positions = enemies.Select(u => u.Position).ToList();
         TargetOptionGroup target = new TargetOptionGroup
         {
             Key = "damageTarget",
-            Count = Math.Min(count, positions.Count),
+            Count = Math.Min(1, positions.Count),
             Type = TargetType.BoardPosition,
             ValidValues = positions,
             Distinct = true
         };
         return new List<TargetOptionGroup> { target };
     }
-    
 }

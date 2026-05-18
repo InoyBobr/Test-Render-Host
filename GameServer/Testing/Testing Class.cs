@@ -5,11 +5,11 @@ public class TestingClass
 {
     public void Main()
     {
-        CardDatabase.LoadFromFolder("CardsData");
         var f = CardDatabase.Get("greenShaman");
         Console.WriteLine(f.CardId);
         //TestBuffOrder();
-        TestSpell();
+        //TestSpell();
+        TestAddAbility();
     }
     
     
@@ -129,6 +129,54 @@ public class TestingClass
         api.TryPlayCard(player2, pos, -1);
         api.TryPlayCard(player2, pos, -1, r);
 
+    }
+
+    private void TestAddAbility()
+    {
+        Console.WriteLine("===== TEST: Ability added to another card =====");
+        
+        var fragile = CardDatabase.Get("fragile");
+        var scorpion = CardDatabase.Get("Giant Scorpion");
+
+        var api = new GameAPI();
+
+        var player1 = new Player(
+            new List<CardData>
+            {
+                fragile,
+                fragile,
+                fragile,
+                fragile
+            },
+            api);
+
+        var player2 = new Player(
+            new List<CardData>
+            {
+                scorpion,
+                scorpion,
+                scorpion,
+                scorpion,
+                scorpion
+            },
+            api);
+
+        SubscribeToAllEventsWithJsonPrint(api, player1);
+
+        api.StartGame(player1, player2);
+        api.TryPlayCard(player1, 0, 2);
+        Thread.Sleep(100);
+        api.EndTurn(player1);
+        api.EndTurn(player1);
+        Thread.Sleep(100);
+        
+        var l = new List<int>() {2};
+        var d = new Dictionary<string, List<int>>()
+        {
+            { "curseTarget", l },
+        };
+        var r = new Dictionary<int, Dictionary<string, List<int>>> { { 0, d } };
+        api.TryPlayCard(player2, 0,0, r);
     }
 
     private void FirstTest()

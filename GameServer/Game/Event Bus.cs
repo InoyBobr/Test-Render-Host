@@ -47,8 +47,6 @@ public class EventBus
         typeof(RoundEnded),
         typeof(PlayerScoredEvent),
         typeof(CardKilledEvent)
-        
-        // можно добавить другие, которые сбрасывают “цикл игрока”
     };
 
     // список событий, при которых нужно сбросить счётчик
@@ -130,7 +128,10 @@ public class EventBus
         
         if (gameEvent is CardKilledEvent ||
             _battleMode && gameEvent is CardDamagedEvent ||
-            _battleMode && gameEvent is CardBuffedEvent)
+            _battleMode && gameEvent is CardBuffedEvent ||
+            _battleMode && gameEvent is ColorChangedEvent ||
+            _battleMode && gameEvent is KeywordAddedEvent ||
+            _battleMode && gameEvent is KeywordRemovedEvent )
         {
             _delayedEventQueue.Enqueue(gameEvent);
             return;

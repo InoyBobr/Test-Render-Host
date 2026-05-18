@@ -56,6 +56,11 @@ public abstract class CardInstance
             throw new ArgumentException();
 
         AddedAbilities.Add(abilityState);
+        if (abilityState.Logic == null)
+        {
+            var logic = AbilityLogicRegistry.Create(abilityState.AbilityId, abilityState);
+            abilityState.AttachLogic(logic);
+        }
         abilityState.Logic.OnGain();
     }
 

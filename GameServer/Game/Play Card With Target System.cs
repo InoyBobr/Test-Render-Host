@@ -56,6 +56,7 @@ public class GameContext
 {
     private readonly Board _board;
     private readonly Player _player;
+    
 
     // preview-данные
     private readonly CardInstance? _previewCard;
@@ -68,26 +69,32 @@ public class GameContext
 
     public int? PreviewPosition =>
         _previewCard != null ? _previewPosition : null;
+    public int PlayerScore { get; }
+    public int EnemyScore { get;  }
 
-    public GameContext(Board board, Player player)
+    public GameContext(Board board, Player player, int playerScore, int enemyScore)
     {
         _board = board;
         _player = player;
+        PlayerScore = playerScore;
+        EnemyScore = enemyScore;
     }
 
-    private GameContext(Board board, Player player,
+    private GameContext(Board board, Player player, int playerScore, int enemyScore,
         CardInstance? previewCard,
         int previewPosition)
     {
         _board = board;
         _player = player;
+        PlayerScore = playerScore;
+        EnemyScore = enemyScore;
         _previewCard = previewCard;
         _previewPosition = previewPosition;
     }
     
     public GameContext WithPreviewPlacement(CardInstance? card, int pos)
     {
-        return new GameContext(_board, _player, card, pos);
+        return new GameContext(_board, _player, PlayerScore, EnemyScore, card, pos);
     }
     
     public CardInstance? GetCardAt(int position)

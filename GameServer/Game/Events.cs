@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 public interface IGameEvent { }
 
@@ -123,10 +124,10 @@ public class RandomCardDamageRequestEvent : IGameEvent
 {
     public TargetSelector Selector;
     public int Damage;
-    public CardInstance Source;
+    public CardInstance? Source;
     public bool Allowed = true;
 
-    public RandomCardDamageRequestEvent(TargetSelector selector, int damage, CardInstance source = null)
+    public RandomCardDamageRequestEvent(TargetSelector selector, int damage, CardInstance? source = null)
     {
         Selector = selector;
         Damage = damage;
@@ -163,10 +164,10 @@ public class CardBuffRequestEvent : UnitEvent
 {
     public int PowerDelta;
     public int HealthDelta;
-    public CardInstance Source;
+    public CardInstance? Source;
     public bool Allowed = true;
 
-    public CardBuffRequestEvent(UnitInstance card, int power, int health, CardInstance source = null)
+    public CardBuffRequestEvent(UnitInstance card, int power, int health, CardInstance? source = null)
     {
         Card = card;
         PowerDelta = power;
@@ -177,12 +178,13 @@ public class CardBuffRequestEvent : UnitEvent
 
 public class RandomCardBuffRequestEvent : IGameEvent
 {
+    public bool Allowed = true;
     public TargetSelector Selector;
     public int PowerDelta;
     public int HealthDelta;
     public CardInstance? Source;
 
-    public RandomCardBuffRequestEvent(TargetSelector selector, int powerDelta, int healthDelta, CardInstance source = null)
+    public RandomCardBuffRequestEvent(TargetSelector selector, int powerDelta, int healthDelta, CardInstance? source = null)
     {
         Selector = selector;
         PowerDelta = powerDelta;
@@ -232,6 +234,18 @@ public class RemoveKeywordRequestEvent : UnitEvent
     }
 }
 
+public class RemoveAllKeywordsRequestEvent : UnitEvent
+{
+    public bool Allowed = true;
+    public CardInstance Source;
+
+    public RemoveAllKeywordsRequestEvent(UnitInstance unit, CardInstance source)
+    {
+        Card = unit;
+        Source = source;
+    }
+}
+
 public class KeywordRemovedEvent : UnitEvent
 {
     public readonly Keyword Keyword;
@@ -242,6 +256,40 @@ public class KeywordRemovedEvent : UnitEvent
         Keyword = keyword;
         Card = card;
         Source = source;
+    }
+}
+
+public class KeywordsRemovedEvent : UnitEvent
+{
+    public readonly ImmutableHashSet<Keyword> Keywords;
+    public readonly CardInstance Source;
+
+    public KeywordsRemovedEvent(List<Keyword> keywords, UnitInstance unit, CardInstance source)
+    {
+        Keywords = keywords.ToImmutableHashSet();
+        Card = unit;
+        Source = source;
+    }
+    
+    public KeywordsRemovedEvent(HashSet<Keyword> keywords, UnitInstance unit, CardInstance source)
+    {
+        Keywords = keywords.ToImmutableHashSet();
+        Card = unit;
+        Source = source;
+    }
+}
+
+public class AddAbilityRequestEvent : CardEvent
+{
+    public bool Allowed = true;
+    public string AbilityId;
+    public List<AbilityParameter> Parameters;
+
+    public AddAbilityRequestEvent(CardInstance card ,string abilityId, List<AbilityParameter> parameters)
+    {
+        Card = card;
+        AbilityId = abilityId;
+        Parameters = parameters;
     }
 }
 
@@ -390,11 +438,13 @@ public class CardDrawRequestEvent : IGameEvent
     public Player Player;
     public int Amount;
     public bool Allowed = true;
+    public CardInstance? Source;
 
-    public CardDrawRequestEvent(Player player, int amount)
+    public CardDrawRequestEvent(Player player, int amount, CardInstance? source = null)
     {
         Player = player;
         Amount = amount;
+        Source = source;
     }
 }
 
@@ -468,7 +518,18 @@ public class TargetSelector
     public StatConstraint Stat;
 
     public TargetPick Pick;
-    public int Count = 1; // NEW
+    public int Count;
+    public bool ExcludeSelf;
+
+    public TargetSelector(TargetSide side, CardZone zone, FaceConstraint face, StatConstraint stat, TargetPick pick, int count = 1, bool excludeSelf = true)
+    {
+        Side = side;
+        Zone = zone;
+        Face = face;
+        Stat = stat;
+        Pick = pick;
+        Count = count;
+    }
 }
 public enum TargetSide
 {
@@ -486,7 +547,9 @@ public enum StatConstraint
 {
     Any,
     Weakest,
-    Strongest
+    Strongest,
+    MostHealth,
+    LeastHealth
 }
 
 public enum TargetPick

@@ -1,7 +1,8 @@
-[AbilityId("knight_ability")]
-public class Knight_Ability : AbilityLogic
+namespace GameServer.Abilities;
+[AbilityId("deal_damage_to_enemy_on_the_same_face")]
+public class Deal_damage_to_enemy_on_the_same_face : AbilityLogic
 {
-    public Knight_Ability(AbilityState state) : base(state) {}
+    public Deal_damage_to_enemy_on_the_same_face(AbilityState state) : base(state) {}
     
     public override void OnGain()
     {
@@ -32,18 +33,17 @@ public class Knight_Ability : AbilityLogic
     
     public override List<TargetOptionGroup>? GetTargetOptions(GameContext ctx)
     {
-        var count = State.IntValues.GetValueOrDefault("count", 1);
-        var enemies = ctx.GetEnemyCards(Owner);
+        var enemies = ctx.GetEnemyCardsOnFace(OwnerUnit);
         var positions = enemies.Select(u => u.Position).ToList();
         TargetOptionGroup target = new TargetOptionGroup
         {
             Key = "damageTarget",
-            Count = Math.Min(count, positions.Count),
+            Count = Math.Min(1, positions.Count),
             Type = TargetType.BoardPosition,
             ValidValues = positions,
             Distinct = true
         };
         return new List<TargetOptionGroup> { target };
     }
-    
+
 }
