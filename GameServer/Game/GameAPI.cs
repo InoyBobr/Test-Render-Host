@@ -1152,6 +1152,7 @@ public class GameAPI
                     if (CurrentPlayer == firstPlayer)
                     {
                         StartTurn(secondPlayer);
+                        return;
                     }
                     else
                     {
