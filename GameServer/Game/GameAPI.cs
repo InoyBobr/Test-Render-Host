@@ -1145,6 +1145,25 @@ public class GameAPI
                 return;
             case GameState.PlayPhase:
             {
+                if (Round == 1)
+                {
+                    var ev = new PlayerTurnEnded(CurrentPlayer);
+                    TurnEnded?.Invoke(ev);
+                    if (CurrentPlayer == firstPlayer)
+                    {
+                        StartTurn(secondPlayer);
+                    }
+                    else
+                    {
+                        Bus.Publish(new RoundEnded(Round));
+                        Round += 1;
+                        var rse = new RoundStarted(Round);
+                        RoundStarted?.Invoke(rse);
+                        Bus.Publish(rse);
+                        StartTurn(secondPlayer);
+                        return;
+                    }
+                }
                 SetGameState(GameState.RotatePhase);
                 var e = new PlayerRotationPhaseStarted(CurrentPlayer);
                 RotationPhaseStarted?.Invoke(e);
@@ -1158,7 +1177,6 @@ public class GameAPI
                 Bus.Publish(e);
                 if (CurrentPlayer == firstPlayer)
                 {
-                    
                     StartTurn(secondPlayer);
                 }
                 else

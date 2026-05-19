@@ -373,6 +373,14 @@ public class Session
                 position = e.Card.Position,
                 source = e.Source?.Position
             });
+        api.KeywordsRemoved += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "keywords_removed",
+                keywords = e.Keywords,
+                position = e.Card.Position,
+                source = e.Source?.Position
+            });
         api.ColorChanged += e =>
             _ = Broadcast(_ => new
             {
