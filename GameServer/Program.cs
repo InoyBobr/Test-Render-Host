@@ -12,8 +12,8 @@ app.UseWebSockets();
 CardDatabase.LoadFromFolder("CardsData");
 
 var matchmaker = new Matchmaker();
-var testingObj = new TestingClass();
-testingObj.Main();
+//var testingObj = new TestingClass();
+//testingObj.Main();
 
 
 

@@ -19,7 +19,7 @@ public class TestingClass
         Console.WriteLine("===== TEST: Buff before enemy damage =====");
 
         var buffer = CardDatabase.Get("greenShaman");
-        var fragile = CardDatabase.Get("fragile");
+        var fragile = CardDatabase.Get("Glass Golem");
         var pinger = CardDatabase.Get("redShaman");
 
         var api = new GameAPI();
@@ -81,7 +81,7 @@ public class TestingClass
     {
         Console.WriteLine("===== TEST: Spell requires units to be played =====");
         
-        var fragile = CardDatabase.Get("fragile");
+        var fragile = CardDatabase.Get("Glass Golem");
         var fireball = CardDatabase.Get("fireBall");
 
         var api = new GameAPI();
@@ -135,7 +135,7 @@ public class TestingClass
     {
         Console.WriteLine("===== TEST: Ability added to another card =====");
         
-        var fragile = CardDatabase.Get("fragile");
+        var fragile = CardDatabase.Get("Glass Golem");
         var scorpion = CardDatabase.Get("Giant Scorpion");
 
         var api = new GameAPI();
