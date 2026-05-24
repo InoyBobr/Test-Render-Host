@@ -23,8 +23,6 @@ public class DuelistAbility : AbilityLogic
             return;
         var enemies = ctx.GetEnemyCardsOnFace(OwnerUnit);
         var allies = ctx.GetFriendlyCardsOnFace(OwnerUnit);
-        if (!State.IntValues.TryGetValue("damage", out var damage))
-            return;
         var unitInstances = enemies as UnitInstance[] ?? enemies.ToArray();
         if(!(unitInstances.Length == 1 && !allies.Any()))
             return;

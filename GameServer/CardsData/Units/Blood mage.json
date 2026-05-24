@@ -1,0 +1,17 @@
+{
+  "CardId": "Blood Mage",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "kill_allies_to_kill_enemies",
+      "Parameters": [
+        {"key" : "allyCount", "value" : 2},
+        {"key" : "enemiesTarget", "value" : 1}
+      ]
+    }
+  ]
+}

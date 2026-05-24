@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("deal_self_damage_at_battle")]
 public class Deal_self_damage_at_battle : AbilityLogic
 {
     public Deal_self_damage_at_battle(AbilityState state) : base(state) {}

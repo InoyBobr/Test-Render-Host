@@ -1,13 +1,13 @@
 {
-  "CardId": "Pegasus",
+  "CardId": "Duelist",
   "Type": "Unit",
   "basePower": 3,
-  "baseHealth": 2,
+  "baseHealth": 4,
   "color": "Blue",
-  "keywords": ["Flying"],
+  "keywords": [],
   "abilities": [
     {
-      "AbilityId": "give_ally_quick_attack",
+      "AbilityId": "duelist_ability",
       "Parameters": []
     }
   ]

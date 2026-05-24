@@ -1,9 +1,17 @@
 {
   "CardId": "Herald",
   "Type": "Unit",
-  "basePower": 4,
-  "baseHealth": 4,
+  "basePower": 3,
+  "baseHealth": 5,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "herald_ability",
+      "Parameters": [
+        {"key" : "powerBuff", "value" : 1},
+        {"key" : "healthBuff", "value" : 1}
+      ]
+    }
+  ]
 }

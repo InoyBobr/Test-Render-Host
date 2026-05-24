@@ -32,10 +32,11 @@ public class GameAPI
     public int Round { get; private set; } = 1;
 
     // Количество карт, которое игрок берёт в начале игры или хода
-    public const int StartDrawCount = 4;
+    public const int StartDrawCount = 5;
 
     private int unitCounter = 0;
     private int hoardCounter = 0;
+    private int rotationCounter = 0;
     
     private ChoiceContext? _pendingChoice;
     private readonly Dictionary<UnitInstance, List<CardCombatDamageRequestEvent>> _pendingCombatDamage = new();
@@ -63,7 +64,7 @@ public class GameAPI
     public event Action<KeywordRemovedEvent>? KeywordRemoved;
     public event Action<KeywordsRemovedEvent>? KeywordsRemoved;
     public event Action<ColorChangedEvent>? ColorChanged;
-    
+    public event Action<Player?>? GameOver; 
 
 
 
@@ -116,7 +117,10 @@ public class GameAPI
     {
         if (player != CurrentPlayer)
             return;
-        Bus.Publish(new PlayerTurnEnded(player));
+        if (_gameState == GameState.RotatePhase && rotationCounter > 0)
+        {
+            return;
+        }
         ProcessState();
     }
 
@@ -587,6 +591,10 @@ public class GameAPI
             return;
         }
 
+        if (rotationCounter == 0)
+        {
+            FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="No more rotations", Player = player});
+        }
         if (amountOfRotations == 0)
         {
             FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="Zero rotation", Player = player});
@@ -610,6 +618,11 @@ public class GameAPI
         var e = new FaceRotatedEvent(face, amountOfRotations, player);
         FaceRotated?.Invoke(e);
         Bus.Publish(e);
+        rotationCounter -= 1;
+        if (rotationCounter == 0)
+        {
+            ProcessState();
+        }
     } // выполняет вращение и публикует FaceRotatedEvent
 
     // 6. Бой
@@ -730,6 +743,35 @@ public class GameAPI
             Bus.Publish(new PlayerScoreRequestEvent(1, Player1));
         if (player2Score > player1Score)
             Bus.Publish(new PlayerScoreRequestEvent(1, Player2));
+        if (Round >= 40)
+        {
+            SetGameState(GameState.Finished);
+            if (player1Score > player2Score)
+            {
+                GameOver?.Invoke(Player1);
+                return;
+            }
+
+            if (player2Score > player1Score)
+            {
+                GameOver?.Invoke(Player2);
+                return;
+            }
+            GameOver?.Invoke(null);
+            return;
+        }
+
+        if (player1Score >= 15)
+        {
+            GameOver?.Invoke(Player1);
+            return;
+        }
+        if (player2Score >= 15)
+        {
+            GameOver?.Invoke(Player2);
+            return;
+        }
+
         ProcessState();
     } // определяет, кто контролирует грани
 
@@ -1149,6 +1191,7 @@ public class GameAPI
                 {
                     var ev = new PlayerTurnEnded(CurrentPlayer);
                     TurnEnded?.Invoke(ev);
+                    Bus.Publish(ev);
                     if (CurrentPlayer == firstPlayer)
                     {
                         StartTurn(secondPlayer);
@@ -1169,6 +1212,7 @@ public class GameAPI
                 var e = new PlayerRotationPhaseStarted(CurrentPlayer);
                 RotationPhaseStarted?.Invoke(e);
                 Bus.Publish(e);
+                rotationCounter = 1;
                 return;
             }
             case GameState.RotatePhase:

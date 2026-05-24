@@ -1,0 +1,9 @@
+{
+  "CardId": "Goblin Spearman",
+  "Type": "Unit",
+  "basePower": 2,
+  "baseHealth": 3,
+  "color": "Red",
+  "keywords": ["Hoard"],
+  "abilities": []
+}

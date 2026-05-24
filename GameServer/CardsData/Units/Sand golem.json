@@ -1,15 +1,15 @@
 {
-  "CardId": "Twohead Wolf",
+  "CardId": "Sand Golem",
   "Type": "Unit",
   "basePower": 4,
-  "baseHealth": 4,
+  "baseHealth": 3,
   "color": "Red",
   "keywords": [],
   "abilities": [
     {
-      "AbilityId": "poke_enemy_every_turn",
+      "AbilityId": "draw_card_on_deploy",
       "Parameters": [
-        {"key" : "damage", "value" : 1}
+        {"key" : "amount", "value" : 1}
       ]
     }
   ]

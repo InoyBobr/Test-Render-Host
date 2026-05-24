@@ -1,0 +1,16 @@
+{
+  "CardId": "Explosive Goblin",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Red",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "damage_all_enemies_on_face_after_death",
+      "Parameters": [
+        {"key" : "damage", "value" : 2}
+      ]
+    }
+  ]
+}

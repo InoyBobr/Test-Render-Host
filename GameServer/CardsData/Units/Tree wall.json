@@ -1,0 +1,14 @@
+{
+  "CardId": "Tree Wall",
+  "Type": "Unit",
+  "basePower": 1,
+  "baseHealth": 7,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "defender",
+      "Parameters": []
+    }
+  ]
+}

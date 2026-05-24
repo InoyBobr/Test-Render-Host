@@ -1,0 +1,14 @@
+{
+  "CardId": "Mushroom Queen",
+  "Type": "Unit",
+  "basePower": 2,
+  "baseHealth": 2,
+  "color": "Green",
+  "keywords": ["Shield"],
+  "abilities": [
+    {
+      "AbilityId": "gain_shield_on_ally_death",
+      "Parameters": []
+    }
+  ]
+}

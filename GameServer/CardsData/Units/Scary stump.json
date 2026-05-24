@@ -1,0 +1,22 @@
+{
+  "CardId": "Scary Stump",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "damage_all_enemies_after_death",
+      "Parameters": [
+        {"key" : "damage", "value" : 3}
+      ]
+    },
+    {
+      "AbilityId": "deal_self_damage_at_battle",
+      "Parameters": [
+        {"key" : "damage", "value" : 1}
+      ]
+    }
+  ]
+}

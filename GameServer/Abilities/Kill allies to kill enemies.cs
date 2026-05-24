@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("kill_allies_to_kill_enemies")]
 public class Kill_allies_to_kill_enemies : AbilityLogic
 {
     public Kill_allies_to_kill_enemies(AbilityState state) : base(state) {}

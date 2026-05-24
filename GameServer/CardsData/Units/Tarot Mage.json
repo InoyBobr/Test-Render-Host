@@ -5,5 +5,12 @@
   "baseHealth": 4,
   "color": "Blue",
   "keywords": [],
-  "abilities": []
+  "abilities": [
+    {
+      "AbilityId": "tarot_mage_ability",
+      "Parameters": [
+        {"key" : "draw", "value" : 1}
+      ]
+    }
+  ]
 }

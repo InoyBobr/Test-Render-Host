@@ -1,14 +1,17 @@
 {
   "CardId": "Giant Scorpion",
   "Type": "Unit",
-  "basePower": 4,
-  "baseHealth": 4,
+  "basePower": 3,
+  "baseHealth": 2,
   "color": "Red",
   "keywords": [],
   "abilities": [
     {
-      "AbilityId": "add_curse",
-      "Parameters": []
+      "AbilityId": "buff_self_if_face_is_full_red",
+      "Parameters": [
+        {"key" : "power", "value" : 4},
+        {"key" : "health", "value" : 4}
+      ]
     }
   ]
 }

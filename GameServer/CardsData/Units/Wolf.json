@@ -1,13 +1,13 @@
 {
-  "CardId": "Moss Owl",
+  "CardId": "Wolf",
   "Type": "Unit",
   "basePower": 4,
-  "baseHealth": 4,
+  "baseHealth": 5,
   "color": "Green",
-  "keywords": ["Flying"],
+  "keywords": [],
   "abilities": [
     {
-      "AbilityId": "moss_owl_ability",
+      "AbilityId": "deal_damage_on_being_damaged",
       "Parameters": [
         {"key" : "damage", "value" : 1}
       ]

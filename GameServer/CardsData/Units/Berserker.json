@@ -1,0 +1,14 @@
+{
+  "CardId": "Berserker",
+  "Type": "Unit",
+  "basePower": 2,
+  "baseHealth": 1,
+  "color": "Red",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "buff_if_wins_gain_keywords_if_lose",
+      "Parameters": []
+    }
+  ]
+}

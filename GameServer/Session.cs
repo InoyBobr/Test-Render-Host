@@ -388,6 +388,18 @@ public class Session
                 position = e.Position,
                 color = e.Color
             });
+        api.GameOver += e =>
+        {
+            _ = Broadcast(p =>
+            {
+                bool? result = e is null ? null : e == p;
+                return new
+                {
+                    type = "game_over",
+                    win = result
+                };
+            }).ContinueWith(_ => End("game_over"));
+        };
     }
 
     // =============================================================================================

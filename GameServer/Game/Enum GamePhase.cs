@@ -6,5 +6,6 @@ public enum GameState
     WaitingForChoice,
     BattlePhase,
     RewardingPhase,
-    Mulligan
+    Mulligan,
+    Finished
 }

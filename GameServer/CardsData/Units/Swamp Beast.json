@@ -1,0 +1,14 @@
+{
+  "CardId": "Swamp Beast",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 5,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "color_sticker_green_when_ally_dies",
+      "Parameters": []
+    }
+  ]
+}

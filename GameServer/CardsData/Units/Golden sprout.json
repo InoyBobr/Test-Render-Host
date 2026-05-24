@@ -1,0 +1,18 @@
+{
+  "CardId": "Golden Sprout",
+  "Type": "Unit",
+  "basePower": 0,
+  "baseHealth": 3,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "cannot_attack",
+      "Parameters": []
+    },
+    {
+      "AbilityId": "disable_enemy_score_gain",
+      "Parameters": []
+    }
+  ]
+}

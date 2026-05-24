@@ -1,0 +1,16 @@
+{
+  "CardId": "Sharpie",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "draw_card_on_deploy",
+      "Parameters": [
+        {"key" : "amount", "value" : 2}
+      ]
+    }
+  ]
+}

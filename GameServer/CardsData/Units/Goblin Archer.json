@@ -1,0 +1,9 @@
+{
+  "CardId": "Goblin Archer",
+  "Type": "Unit",
+  "basePower": 3,
+  "baseHealth": 2,
+  "color": "Red",
+  "keywords": ["Hoard"],
+  "abilities": []
+}

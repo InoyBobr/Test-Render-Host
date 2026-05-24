@@ -1,0 +1,9 @@
+{
+  "CardId": "Lion",
+  "Type": "Unit",
+  "basePower": 6,
+  "baseHealth": 5,
+  "color": "Red",
+  "keywords": [],
+  "abilities": []
+}

@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("silence_on_deploy")]
 public class Silence_on_deploy : AbilityLogic
 {
     public Silence_on_deploy(AbilityState state) : base(state) {}

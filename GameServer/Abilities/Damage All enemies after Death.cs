@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("damage_all_enemies_after_death")]
 public class Damage_All_enemies_after_Death : AbilityLogic
 {
     public Damage_All_enemies_after_Death(AbilityState state) : base(state) {}

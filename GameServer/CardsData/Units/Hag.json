@@ -1,0 +1,14 @@
+{
+  "CardId": "Hag",
+  "Type": "Unit",
+  "basePower": 4,
+  "baseHealth": 5,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "silence_on_deploy",
+      "Parameters": []
+    }
+  ]
+}

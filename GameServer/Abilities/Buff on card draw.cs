@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("herald_ability")]
 public class Buff_on_card_draw : AbilityLogic
 {
     public Buff_on_card_draw(AbilityState state) : base(state) {}

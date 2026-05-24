@@ -1,5 +1,5 @@
 namespace GameServer.Abilities;
-
+[AbilityId("moss_owl_ability")]
 public class Damage_random_enemy_on_ally_damage_ally : AbilityLogic
 {
     public Damage_random_enemy_on_ally_damage_ally(AbilityState state) : base(state) {}
