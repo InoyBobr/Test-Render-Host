@@ -763,11 +763,13 @@ public class GameAPI
 
         if (player1Score >= 15)
         {
+            SetGameState(GameState.Finished);
             GameOver?.Invoke(Player1);
             return;
         }
         if (player2Score >= 15)
         {
+            SetGameState(GameState.Finished);
             GameOver?.Invoke(Player2);
             return;
         }
