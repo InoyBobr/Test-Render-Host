@@ -18,7 +18,7 @@ public class Cannot_attack : AbilityLogic
     {
         if (!OnBoardAbilityActive)
             return;
-        if (e.Card != Owner)
+        if (e.Source != Owner)
             return;
         e.Allowed = false;
     }
