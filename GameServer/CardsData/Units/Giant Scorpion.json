@@ -9,8 +9,8 @@
     {
       "AbilityId": "buff_self_if_face_is_full_red",
       "Parameters": [
-        {"key" : "power", "value" : 4},
-        {"key" : "health", "value" : 4}
+        {"key" : "powerBuff", "value" : 4},
+        {"key" : "healthBuff", "value" : 4}
       ]
     }
   ]
