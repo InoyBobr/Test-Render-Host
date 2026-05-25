@@ -743,7 +743,7 @@ public class GameAPI
             Bus.Publish(new PlayerScoreRequestEvent(1, Player1));
         if (player2Score > player1Score)
             Bus.Publish(new PlayerScoreRequestEvent(1, Player2));
-        if (Round >= 40)
+        if (Round >= 13)
         {
             SetGameState(GameState.Finished);
             if (player1Score > player2Score)
@@ -761,13 +761,13 @@ public class GameAPI
             return;
         }
 
-        if (player1Score >= 15)
+        if (player1Score >= 5)
         {
             SetGameState(GameState.Finished);
             GameOver?.Invoke(Player1);
             return;
         }
-        if (player2Score >= 15)
+        if (player2Score >= 5)
         {
             SetGameState(GameState.Finished);
             GameOver?.Invoke(Player2);
