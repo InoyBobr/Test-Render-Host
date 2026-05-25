@@ -1,7 +1,7 @@
 {
   "CardId": "Scary Stump",
   "Type": "Unit",
-  "basePower": 3,
+  "basePower": 1,
   "baseHealth": 2,
   "color": "Green",
   "keywords": [],

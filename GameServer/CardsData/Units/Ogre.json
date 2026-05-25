@@ -1,8 +1,8 @@
 {
   "CardId": "Ogre",
   "Type": "Unit",
-  "basePower": 4,
-  "baseHealth": 4,
+  "basePower": 9,
+  "baseHealth": 7,
   "color": "Red",
   "keywords": [],
   "abilities": [

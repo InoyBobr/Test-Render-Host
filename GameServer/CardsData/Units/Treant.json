@@ -9,7 +9,7 @@
     {
       "AbilityId": "deal_damage_to_enemy_on_the_same_face",
       "Parameters": [
-        {"key" : "damage", "value" : 2}
+        {"key" : "damage", "value" : 3}
       ]
     }
   ]
