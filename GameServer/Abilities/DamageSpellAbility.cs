@@ -32,8 +32,8 @@ public class FireballAbility : AbilityLogic
 
     public override bool CanBePlayed(GameContext ctx)
     {
-        var blueFriends = ctx.GetFriendlyCards(Owner).Where(c => c.Color == StickerColor.Blue);
-        return blueFriends.Any();
+        var redFriends = ctx.GetFriendlyCards(Owner).Where(c => c.Color == StickerColor.Red);
+        return redFriends.Count() >= 3;
     }
 
     public override List<TargetOptionGroup>? GetTargetOptions(GameContext ctx)

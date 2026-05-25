@@ -1,10 +1,10 @@
 {
   "CardId": "Explosive Goblin",
   "Type": "Unit",
-  "basePower": 3,
-  "baseHealth": 2,
+  "basePower": 1,
+  "baseHealth": 1,
   "color": "Red",
-  "keywords": [],
+  "keywords": ["Hoard"],
   "abilities": [
     {
       "AbilityId": "damage_all_enemies_on_face_after_death",
