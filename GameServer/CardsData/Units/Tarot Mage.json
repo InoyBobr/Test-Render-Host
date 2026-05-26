@@ -1,8 +1,8 @@
 {
   "CardId": "Tarot Mage",
   "Type": "Unit",
-  "basePower": 3,
-  "baseHealth": 6,
+  "basePower": 2,
+  "baseHealth": 5,
   "color": "Blue",
   "keywords": [],
   "abilities": [

@@ -1,8 +1,8 @@
 {
   "CardId": "Herald",
   "Type": "Unit",
-  "basePower": 3,
-  "baseHealth": 5,
+  "basePower": 1,
+  "baseHealth": 2,
   "color": "Blue",
   "keywords": [],
   "abilities": [
