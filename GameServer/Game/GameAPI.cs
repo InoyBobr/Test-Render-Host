@@ -746,13 +746,13 @@ public class GameAPI
         if (Round >= 13)
         {
             SetGameState(GameState.Finished);
-            if (player1Score > player2Score)
+            if (Player1Score > Player2Score)
             {
                 GameOver?.Invoke(Player1);
                 return;
             }
 
-            if (player2Score > player1Score)
+            if (Player2Score > Player1Score)
             {
                 GameOver?.Invoke(Player2);
                 return;
@@ -761,13 +761,13 @@ public class GameAPI
             return;
         }
 
-        if (player1Score >= 5)
+        if (Player1Score >= 5)
         {
             SetGameState(GameState.Finished);
             GameOver?.Invoke(Player1);
             return;
         }
-        if (player2Score >= 5)
+        if (Player2Score >= 5)
         {
             SetGameState(GameState.Finished);
             GameOver?.Invoke(Player2);

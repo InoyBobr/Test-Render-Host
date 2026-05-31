@@ -50,7 +50,7 @@ public class Kill_allies_to_kill_enemies : AbilityLogic
         if (alliesInstances.Length < allyCount || enemiesInstances.Length == 0)
             return null;
         
-        var allyPositions = enemiesInstances.Select(u => u.Position).ToList();
+        var allyPositions = alliesInstances.Select(u => u.Position).ToList();
         var enemyPositions = enemiesInstances.Select(u => u.Position).ToList();
         
         TargetOptionGroup allytarget = new TargetOptionGroup
