@@ -95,15 +95,15 @@ public class GameAPI
         GameStarted?.Invoke();
         var p1 =TryDrawCards(player1, StartDrawCount);
         var p2 =TryDrawCards(player2, StartDrawCount);
-        StartTurn(player1);
+        StartTurn(player1, false);
     }
 
     // 2. Ход игрока
-    private void StartTurn(Player player)
+    private void StartTurn(Player player, bool battle)
     {
         SetGameState(GameState.PlayPhase);
         CurrentPlayer = player;
-        var e = new PlayerTurnStarted(player);
+        var e = new PlayerTurnStarted(player, battle);
         TurnStarted?.Invoke(e);
         Bus.Publish(e);
         TryDrawCards(player, 1);
@@ -1185,7 +1185,7 @@ public class GameAPI
         switch (_gameState)
         {
             case GameState.Start:
-                StartTurn(Player1);
+                StartTurn(Player1, false);
                 return;
             case GameState.PlayPhase:
             {
@@ -1196,7 +1196,7 @@ public class GameAPI
                     Bus.Publish(ev);
                     if (CurrentPlayer == firstPlayer)
                     {
-                        StartTurn(secondPlayer);
+                        StartTurn(secondPlayer, false);
                         return;
                     }
                     else
@@ -1206,7 +1206,7 @@ public class GameAPI
                         var rse = new RoundStarted(Round);
                         RoundStarted?.Invoke(rse);
                         Bus.Publish(rse);
-                        StartTurn(secondPlayer);
+                        StartTurn(secondPlayer, false);
                         return;
                     }
                 }
@@ -1224,7 +1224,7 @@ public class GameAPI
                 Bus.Publish(e);
                 if (CurrentPlayer == firstPlayer)
                 {
-                    StartTurn(secondPlayer);
+                    StartTurn(secondPlayer, true);
                 }
                 else
                 {
@@ -1241,7 +1241,7 @@ public class GameAPI
                 var roundStartEvent = new RoundStarted(Round);
                 RoundStarted?.Invoke(roundStartEvent);
                 Bus.Publish(roundStartEvent);
-                StartTurn(secondPlayer);
+                StartTurn(secondPlayer, false);
                 break;
         }
     }

@@ -189,7 +189,8 @@ public class Session
             _ = Broadcast(p => new
             {
                 type = "turn_started",
-                you = (p == e.Player)
+                you = (p == e.Player),
+                battle = e.BattleIsComing
             });
         api.RotationPhaseStarted += e =>
             _ = Broadcast(p => new

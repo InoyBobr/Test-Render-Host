@@ -353,10 +353,12 @@ public class RoundStarted : IGameEvent
 public class PlayerTurnStarted : IGameEvent
 {
     public readonly Player Player;
+    public readonly bool BattleIsComing;
 
-    public PlayerTurnStarted(Player player)
+    public PlayerTurnStarted(Player player, bool battleIsComing)
     {
         Player = player;
+        BattleIsComing = battleIsComing;
     }
 }
 
