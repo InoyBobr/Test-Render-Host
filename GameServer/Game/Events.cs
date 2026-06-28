@@ -293,6 +293,67 @@ public class AddAbilityRequestEvent : CardEvent
     }
 }
 
+public class MoveCardRequestEvent : UnitEvent
+{
+    public bool Allowed = true;
+    public int Position;
+    public bool SwapAllowed;
+    public CardInstance? Source;
+
+    public MoveCardRequestEvent(UnitInstance unit, int position, bool swapAllowed = false, CardInstance? source = null)
+    {
+        Card = unit;
+        Position = position;
+        SwapAllowed = swapAllowed;
+        Source = source;
+    }
+}
+
+public class CardMovedEvent : UnitEvent
+{
+    public readonly int From;
+    public readonly int To;
+    public readonly UnitInstance? AnotherUnit;
+    public readonly CardInstance? Source;
+
+    public CardMovedEvent(UnitInstance unit, int from, int to, UnitInstance? anotherUnit = null, CardInstance? source = null)
+    {
+        Card = unit;
+        From = from;
+        To = to;
+        AnotherUnit = anotherUnit;
+        Source = source;
+    }
+}
+
+public class CreateCardRequestEvent : IGameEvent
+{
+    public bool Allowed = true;
+    public string CardID;
+    public CardZone Zone;
+    public int? Position;
+    public CardInstance Source;
+    public bool SameOwner;
+
+    public CreateCardRequestEvent(string cardId, CardZone zone, int? position, CardInstance source, bool sameOwner)
+    {
+        CardID = cardId;
+        Zone = zone;
+        Position = position;
+        Source = source;
+        SameOwner = sameOwner;
+    }
+}
+
+public class CardCreatedEvent : CardEvent
+{
+    private CardInstance Source;
+    public CardCreatedEvent(CardInstance card, CardInstance source)
+    {
+        Card = card;
+        Source = source;
+    }
+}
 //--- Изменение кубика ---
 public class FaceRotatedEvent : IGameEvent
 {

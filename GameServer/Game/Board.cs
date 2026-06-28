@@ -78,6 +78,60 @@ public class Board
         _cardPositions[card] = pos;
     }
 
+    public void MoveCard(int start, int finish, bool swap = false)
+    {
+        if(!IsValidPosition(start) || !IsValidPosition(finish))
+            return;
+        if(GetCard(start) == null)
+            return;
+        if (!swap || IsPositionEmpty(finish))
+        {
+            if(!IsPositionEmpty(finish))
+                return;
+            _slots[finish] = _slots[start];
+            _slots[start] = null;
+            _cardPositions[_slots[finish]] = finish;
+            _slots[finish].Position = finish;
+            return;
+        }
+
+        var cardA = GetCard(start);
+        var cardB = GetCard(finish);
+        _slots[start] = cardB;
+        _slots[finish] = cardA;
+        _cardPositions[cardA] = finish;
+        cardA.Position = finish;
+        _cardPositions[cardB] = start;
+        cardB.Position = start;
+
+    }
+
+    public bool MoveCard(UnitInstance unit, int pos, bool swap = false)
+    {
+        if(GetPosition(unit) == null || !IsValidPosition(pos))
+            return false;
+        if (!swap || IsPositionEmpty(pos))
+        {
+            if(!IsPositionEmpty(pos))
+                return false;
+            int initPos = (int)GetPosition(unit);
+            _slots[pos] = unit;
+            _slots[initPos] = null;
+            _cardPositions[unit] = pos;
+            unit.Position = pos;
+            return true;
+        }
+
+        var cardB = GetCard(pos);
+        _slots[unit.Position] = cardB;
+        _slots[pos] = unit;
+        _cardPositions[unit] = pos;
+        _cardPositions[cardB] = unit.Position;
+        cardB.Position = unit.Position;
+        unit.Position = pos;
+        return true;
+    }
+
     public void RemoveCard(UnitInstance card)
     {
         if (!_cardPositions.TryGetValue(card, out int pos))

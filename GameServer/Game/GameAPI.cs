@@ -33,7 +33,10 @@ public class GameAPI
 
     // Количество карт, которое игрок берёт в начале игры или хода
     public const int StartDrawCount = 5;
+    public const int MaxUnitsPerTurn = 1;
+    public const int MaxUnitsInFirstRound = 3;
 
+    public const int FlyingMaxDamage = 1;
     private int unitCounter = 0;
     private int hoardCounter = 0;
     private int rotationCounter = 0;
@@ -53,6 +56,7 @@ public class GameAPI
     public event Action<CardDamagedEvent>? CardDamaged;
     public event Action<CardBuffedEvent>? CardBuffed;
     public event Action<CardKilledEvent>? CardKilled;
+    public event Action<CardCreatedEvent>? CardCreated; 
     public event Action<ShieldBrokenEvent>? ShieldBroken; 
     public event Action<ChoiceContext>? ChoiceStarted;
     public event Action<ChoiceResult>? ChoiceGetsResult;
@@ -107,9 +111,9 @@ public class GameAPI
         TurnStarted?.Invoke(e);
         Bus.Publish(e);
         TryDrawCards(player, 1);
-        unitCounter = 1;
+        unitCounter = MaxUnitsPerTurn;
         if (Round == 1)
-            unitCounter = 3;
+            unitCounter = MaxUnitsInFirstRound;
         hoardCounter = 0;
     }
 
@@ -831,6 +835,12 @@ public class GameAPI
         {
             return;
         }
+
+        if (e.Unit.Keywords.Contains(Keyword.Flying) && e.Source is UnitInstance source &&
+            !source.Keywords.Contains(Keyword.Flying))
+        {
+            e.Damage = Math.Min(e.Damage, FlyingMaxDamage);
+        }
         if (!_pendingCombatDamage.TryGetValue(e.Unit, out var list))
         {
             list = new List<CardCombatDamageRequestEvent>();
@@ -968,6 +978,69 @@ public class GameAPI
             return;
         var state = new AbilityState(e.AbilityId, e.Parameters, e.Card);
         e.Card.AddAbility(state);
+    }
+
+    private void MoveCard(MoveCardRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        var start = e.Unit.Position;
+        if (Board.MoveCard(e.Unit, e.Position, e.SwapAllowed))
+        {
+            Bus.Publish(new CardMovedEvent(e.Unit, start, e.Position, Board.GetCard(start), e.Source));
+        }
+    }
+
+    private void CreateCard(CreateCardRequestEvent e)
+    {
+        if (!e.Allowed)
+        {
+            return;
+        }
+
+        if(!CardDatabase.TryGet(e.CardID, out var data))
+           return;
+        if(data.Type == CardType.Spell && e.Zone == CardZone.Board ||
+           e.Position != null && !Board.IsPositionEmpty((int)e.Position) && e.Zone == CardZone.Board)
+            return;
+        Player owner;
+        if (e.SameOwner)
+            owner = e.Source.Owner;
+        else
+            owner = e.Source.Owner == Player1 ? Player2 : Player1;
+        CardCreatedEvent ev;
+        if (e.Zone == CardZone.Board)
+        {
+            if (e.Position == null)
+            {
+                var validPos = Enumerable.Range(0, 24).Where(Board.IsPositionEmpty).ToList();
+                if (validPos.Count == 0)
+                    return;
+                var rnd = new Random();
+                int position = validPos[rnd.Next(validPos.Count)];
+                var unit = CardFactory.Create(data, owner, this, CardZone.Board) as UnitInstance;
+                Board.PlaceCard(unit, position);
+                unit.Position = position;
+                ev = new CardCreatedEvent(unit, e.Source);
+                Bus.Publish(ev);
+                CardCreated?.Invoke(ev);
+            }
+            else
+            {
+                var unit = CardFactory.Create(data, owner, this, CardZone.Board) as UnitInstance;
+                Board.PlaceCard(unit, e.Position.Value);
+                unit.Position = e.Position.Value;
+                ev = new CardCreatedEvent(unit, e.Source);
+                Bus.Publish(ev);
+                CardCreated?.Invoke(ev);
+            }
+            return;
+        }
+        var card = CardFactory.Create(data, owner, this, e.Zone);
+        owner.AddCard(card, e.Position, e.Zone);
+        ev = new CardCreatedEvent(card, e.Source);
+        Bus.Publish(ev);
+        CardCreated?.Invoke(ev);
     }
 
     //Методы куба
@@ -1169,6 +1242,7 @@ public class GameAPI
         Bus.Subscribe<RemoveAllKeywordsRequestEvent>(RemoveAllKeywords, SubscriberOwnerType.API, this);
         Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddAbilityRequestEvent>(AddAbility, SubscriberOwnerType.API, this);
+        Bus.Subscribe<MoveCardRequestEvent>(MoveCard, SubscriberOwnerType.API, this);
         
     }
     private void UnsubscribeFromCardEvents(){}

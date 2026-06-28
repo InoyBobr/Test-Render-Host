@@ -9,6 +9,12 @@ public enum SubscriberOwnerType
     API
 }
 
+public enum SubsriberOrder
+{
+    Early,
+    Normal,
+    Late
+}
 
 public class EventBus
 {
@@ -19,6 +25,7 @@ public class EventBus
         public Delegate RawCallback; // оригинальный делегат
         public Action<IGameEvent> WrappedCallback; // обёртка
         public Type EventType;
+        public SubsriberOrder Order;
     }
 
     private Queue<IGameEvent> _eventQueue = new();
@@ -75,7 +82,8 @@ public class EventBus
     public void Subscribe<TEvent>(
         Action<TEvent> callback,
         SubscriberOwnerType ownerType,
-        object? ownerReference
+        object? ownerReference,
+        SubsriberOrder order = SubsriberOrder.Normal
     ) where TEvent : IGameEvent
     {
         Type eventType = typeof(TEvent);
@@ -89,10 +97,11 @@ public class EventBus
         list.Add(new Subscriber
         {
             OwnerType = ownerType,
+            Order = order,
             Owner = ownerReference,
             RawCallback = callback,
             EventType = eventType,
-            WrappedCallback = e => callback((TEvent)e)
+            WrappedCallback = e => callback((TEvent)e),
         });
     }
 
@@ -212,7 +221,8 @@ public class EventBus
         if (e is not CardEvent cardEvent)
         {
             return original
-                .OrderBy(sub => sub.OwnerType switch
+                .OrderBy(sub => sub.Order)
+                .ThenBy(sub => sub.OwnerType switch
                 {
                     SubscriberOwnerType.PlayerPassive => 0,
                     SubscriberOwnerType.Card => 1,
@@ -224,7 +234,8 @@ public class EventBus
         var eventCard = cardEvent.Card;
 
         return original
-            .OrderBy(sub => ResolvePriority(sub, eventCard))
+            .OrderBy(sub => sub.Order)
+            .ThenBy(sub => ResolvePriority(sub, eventCard))
             .ToList();
     }
 

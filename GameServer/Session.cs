@@ -358,6 +358,56 @@ public class Session
                     you = you
                 };
             });
+        api.CardCreated += e =>
+            _ = Broadcast(p =>
+            {
+                var you = e.Card.Owner == p;
+                switch (e.Card.Zone)
+                {
+                    case CardZone.Board or CardZone.Discard:
+                        return new
+                        {
+                            type = "card_created",
+                            card = CardMapper.ToDto(e.Card),
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand when you:
+                        return new
+                        {
+                            type = "card_created",
+                            card = CardMapper.ToDto(e.Card),
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand:
+                        return new
+                        {
+                            type = "card_created",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck when you:
+                        return new
+                        {
+                            type = "card_created",
+                            card = CardMapper.ToDto(e.Card),
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck:
+                        return new
+                        {
+                            type = "card_created",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    default:
+                        return new { };
+                }
+            });
         api.KeywordAdded += e =>
             _ = Broadcast(_ => new
             {

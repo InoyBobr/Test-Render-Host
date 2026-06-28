@@ -78,5 +78,53 @@ public class Player
         }
     }
 
+    public void AddCard(CardInstance card, int? position, CardZone zone)
+    {
+        var rnd = new Random();
+        card.Zone = zone;
+        switch (zone)
+        {
+            case CardZone.Deck:
+            {
+                position ??= rnd.Next(_deck.Count + 1);
+                if(position < 0 || position > _deck.Count)
+                    _deck.Add(card);
+                else
+                    _deck.Insert(position.Value, card);
+                foreach (var c in _deck)
+                {
+                    c.Position = _deck.IndexOf(c);
+                }
+                break;
+            }
+            case CardZone.Discard:
+            {
+                position ??= rnd.Next(_discard.Count + 1);
+                if(position < 0 || position > _discard.Count)
+                    _discard.Add(card);
+                else
+                    _discard.Insert(position.Value, card);
+                foreach (var c in _discard)
+                {
+                    c.Position = _discard.IndexOf(c);
+                }
+                break;
+            }
+            case CardZone.Hand:
+            {
+                position ??= rnd.Next(_hand.Count + 1);
+                if(position < 0 || position > _hand.Count)
+                    _hand.Add(card);
+                else
+                    _hand.Insert(position.Value, card);
+                foreach (var c in _hand)
+                {
+                    c.Position = _hand.IndexOf(c);
+                }
+                break;
+            }
+        }
+        
+    }
 }
 
