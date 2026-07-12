@@ -4,8 +4,8 @@ public enum Keyword
     DoubleAttack,
     Hoard,
     Flying,
-    Taunt,
     Silenced,
     Shield,
-    Sleeping
+    Sleeping,
+    Paranoia
 }

@@ -662,6 +662,11 @@ public class GameAPI
             if (!card.Keywords.Contains(Keyword.QuickAttack) && !card.Keywords.Contains(Keyword.DoubleAttack))
                 continue;
             var enemies = Board.GetEnemyCardsOnFace(card);
+            if (card.Keywords.Contains(Keyword.Paranoia))
+            {
+                enemies = enemies.Concat(Board.GetFriendlyCardsOnFace(card));
+            }
+            
             foreach (var enemy in enemies)
             {
                 {
@@ -682,6 +687,10 @@ public class GameAPI
                 continue;
             if (card.Keywords.Contains(Keyword.QuickAttack) && !card.Keywords.Contains(Keyword.DoubleAttack)) continue;
             var enemies = Board.GetEnemyCardsOnFace(card);
+            if (card.Keywords.Contains(Keyword.Paranoia))
+            {
+                enemies = enemies.Concat(Board.GetFriendlyCardsOnFace(card));
+            }
             foreach (var enemy in enemies)
             {
                 {
