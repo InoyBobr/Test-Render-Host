@@ -5,15 +5,15 @@ public class Silence_on_deploy : AbilityLogic
     public Silence_on_deploy(AbilityState state) : base(state) {}
     public override void OnGain()
     {
-        Bus.Subscribe<CardPlayedEvent>(DealDamageOnPlay, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<CardPlayedEvent>(SilenceOnPlay, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<CardPlayedEvent>(DealDamageOnPlay, Owner);
+        Bus.Unsubscribe<CardPlayedEvent>(SilenceOnPlay, Owner);
     }
 
-    private void DealDamageOnPlay(CardPlayedEvent e)
+    private void SilenceOnPlay(CardPlayedEvent e)
     {
         if (e.Card != Owner)
             return;

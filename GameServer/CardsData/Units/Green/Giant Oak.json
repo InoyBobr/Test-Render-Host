@@ -10,7 +10,7 @@
       "AbilityId": "oak_ability",
       "Parameters": [
         {"key" : "powerBuff", "value" : 2},
-        {"key" : "healthBuff", "value" : 2}
+        {"key" : "healthBuff", "value" : 1}
       ]
     }
   ]

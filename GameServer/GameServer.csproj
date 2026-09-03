@@ -11,5 +11,11 @@
     <_ContentIncludedByDefault Remove="Game\CardsData\GreenShaman.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Abilities\Spells\General\" />
+    <Folder Include="Abilities\Spells\Green\" />
+    <Folder Include="Abilities\Spells\Red\" />
+  </ItemGroup>
+
 </Project>
 

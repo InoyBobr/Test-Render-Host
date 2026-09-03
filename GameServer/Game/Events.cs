@@ -120,19 +120,14 @@ public class CardNonCombatDamageRequestEvent : CardDamageRequestEvent
     }
 }
 
-public class RandomCardDamageRequestEvent : IGameEvent
+public class RandomCardDamageRequestEvent(TargetSelector selector, int damage, CardInstance source) : IGameEvent
 {
-    public TargetSelector Selector;
-    public int Damage;
-    public CardInstance? Source;
+    public TargetSelector Selector = selector;
+    public int Damage = damage;
+    public CardInstance Source = source;
     public bool Allowed = true;
-
-    public RandomCardDamageRequestEvent(TargetSelector selector, int damage, CardInstance? source = null)
-    {
-        Selector = selector;
-        Damage = damage;
-        Source = source;
-    }
+    public readonly int SourcePos = source.Position;
+    public readonly CardZone SourceZone = source.Zone;
 }
 
 public class ShieldBrokenEvent : UnitEvent
@@ -176,21 +171,16 @@ public class CardBuffRequestEvent : UnitEvent
     }
 }
 
-public class RandomCardBuffRequestEvent : IGameEvent
+public class RandomCardBuffRequestEvent(TargetSelector selector, int powerDelta, int healthDelta, CardInstance source)
+    : IGameEvent
 {
     public bool Allowed = true;
-    public TargetSelector Selector;
-    public int PowerDelta;
-    public int HealthDelta;
-    public CardInstance? Source;
-
-    public RandomCardBuffRequestEvent(TargetSelector selector, int powerDelta, int healthDelta, CardInstance? source = null)
-    {
-        Selector = selector;
-        PowerDelta = powerDelta;
-        HealthDelta = healthDelta;
-        Source = source;
-    }
+    public TargetSelector Selector = selector;
+    public int PowerDelta = powerDelta;
+    public int HealthDelta = healthDelta;
+    public CardInstance Source = source;
+    public readonly int SourcePos = source.Position;
+    public readonly CardZone SourceZone = source.Zone;
 }
 
 public class AddKeywordRequestEvent : UnitEvent
@@ -482,6 +472,42 @@ public class PlayerScoredEvent(int amount, int score, Player player) : IGameEven
     public readonly int Amount = amount;
     public readonly int FullScore = score;
     public readonly Player Player = player;
+}
+
+public class ChangeRemainingUnitCounterRequestEvent(int amount, bool isHoard, bool setValue, bool canBeNegative, CardInstance? source = null)
+    : IGameEvent
+{
+    public bool Allowed = true;
+    public int Amount = amount;
+    public bool IsHoard = isHoard;
+    public bool SetValue = setValue;
+    public bool CanBeNegative = canBeNegative;
+    public CardInstance? Source = source;
+}
+
+public class RemainingUnitCounterChangedEvent(int amount, int current, bool hoard, bool valueSet, CardInstance? source) : IGameEvent
+{
+    public readonly int Amount = amount;
+    public readonly int Current = current;
+    public readonly bool Hoard = hoard;
+    public readonly bool ValueSet = valueSet;
+    public readonly CardInstance? Source = source;
+}
+
+public class ChangeRemainingRotationCounterRequestEvent(int amount, bool setValue, bool canBeNegative, CardInstance? source = null) : IGameEvent
+{
+    public bool Allowed = true;
+    public int Amount = amount;
+    public bool SetValue = setValue;
+    public bool CanBeNegative = canBeNegative;
+    public CardInstance? Source = source;
+}
+
+public class RemainingRotationCounterChangedEvent(int amount, bool valueSet, CardInstance? source) : IGameEvent
+{
+    public readonly int Amount = amount;
+    public readonly bool ValueSet = valueSet;
+    public readonly CardInstance? Source = source;
 }
 
 //---

@@ -35,11 +35,13 @@ public class GameAPI
     public const int StartDrawCount = 5;
     public const int MaxUnitsPerTurn = 1;
     public const int MaxUnitsInFirstRound = 3;
+    public const int ExtraUnitsPerHoard = 1;
 
     public const int FlyingMaxDamage = 1;
     private int unitCounter = 0;
     private int hoardCounter = 0;
     private int rotationCounter = 0;
+    private int extraRotationCounter = 0;
     
     private ChoiceContext? _pendingChoice;
     private readonly Dictionary<UnitInstance, List<CardCombatDamageRequestEvent>> _pendingCombatDamage = new();
@@ -453,7 +455,7 @@ public class GameAPI
                 unitCounter--;
                 if (((UnitInstance)card).Keywords.Contains(Keyword.Hoard))
                 {
-                    hoardCounter++;
+                    hoardCounter += ExtraUnitsPerHoard;
                 }
             }
             Board.PlaceCard((UnitInstance)card, position.Value);
@@ -595,7 +597,7 @@ public class GameAPI
             return;
         }
 
-        if (rotationCounter == 0)
+        if (rotationCounter <= 0 && extraRotationCounter <= 0)
         {
             FaceRotatedResult?.Invoke(new RotateFaceResult{Success=false, Error="No more rotations", Player = player});
         }
@@ -617,13 +619,23 @@ public class GameAPI
                 Board.RotateFace(face, false);
                 break;
         }
+
+        if (rotationCounter > 0)
+        {
+            rotationCounter -= 1;
+        }
+        else
+        {
+            extraRotationCounter -= 1;
+        }
+        
         
         FaceRotatedResult?.Invoke(new RotateFaceResult{Success=true, Player = player});
         var e = new FaceRotatedEvent(face, amountOfRotations, player);
         FaceRotated?.Invoke(e);
         Bus.Publish(e);
-        rotationCounter -= 1;
-        if (rotationCounter == 0)
+       
+        if (rotationCounter == 0 && extraRotationCounter == 0)
         {
             ProcessState();
         }
@@ -885,7 +897,7 @@ public class GameAPI
     {
         if (!e.Allowed || e.Damage <= 0)
             return;
-        var targets = GetSelectedCards(e.Source, e.Selector);
+        var targets = GetSelectedCards(e.Source,e.SourcePos, e.SourceZone, e.Selector);
         foreach (var target in targets)
         {
             if (target is UnitInstance unit)
@@ -938,7 +950,7 @@ public class GameAPI
     {
         if (!e.Allowed || e.PowerDelta <= 0 && e.HealthDelta <= 0)
             return;
-        var targets = GetSelectedCards(e.Source, e.Selector);
+        var targets = GetSelectedCards(e.Source,e.SourcePos, e.SourceZone, e.Selector);
         foreach (var target in targets)
         {
             if (target is UnitInstance unit)
@@ -1051,6 +1063,84 @@ public class GameAPI
         Bus.Publish(ev);
         CardCreated?.Invoke(ev);
     }
+    
+    //Методы действий игрока
+    private void ChangeRemainingUnitsCounter(ChangeRemainingUnitCounterRequestEvent e)
+    {
+        if(!e.Allowed)
+            return;
+        if(e.Amount < 0 && !e.CanBeNegative || e.Amount == 0)
+            return;
+        switch (e.IsHoard, e.SetValue)
+        {
+            case (false, false):
+            {
+                unitCounter += e.Amount;
+                break;
+            }
+            case (true, false):
+            {
+                hoardCounter += e.Amount;
+                break;
+            }
+            case (false, true):
+            {
+                unitCounter = e.Amount;
+                break;
+            }
+            case (true, true):
+            {
+                hoardCounter = e.Amount;
+                break;
+            }
+        }
+        Bus.Publish(new RemainingUnitCounterChangedEvent(e.Amount, e.IsHoard ? hoardCounter : unitCounter, e.IsHoard, e.SetValue, e.Source));
+    }
+
+    private void ChangeRemainingRotationsCounter(ChangeRemainingRotationCounterRequestEvent e)
+    {
+        if(!e.Allowed)
+            return;
+        switch (e.Amount)
+        {
+            case < 0 when !e.CanBeNegative:
+            case 0:
+                return;
+            case > 0 when !e.SetValue:
+                extraRotationCounter += e.Amount;
+                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
+                break;
+        }
+
+        switch (e.Amount)
+        {
+            case > 0 when e.SetValue:
+                extraRotationCounter = e.Amount;
+                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
+                break;
+            case < 0 when !e.SetValue:
+            {
+                extraRotationCounter += e.Amount;
+                if (extraRotationCounter < 0)
+                {
+                    rotationCounter += extraRotationCounter;
+                    extraRotationCounter = 0;
+                    if (rotationCounter < 0)
+                    {
+                        rotationCounter = 0;
+                    }
+                }
+                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
+                break;
+            }
+        }
+
+        if (e.Amount < 0 && e.SetValue)
+        {
+            extraRotationCounter = e.Amount;
+            Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
+        }
+    }
 
     //Методы куба
 
@@ -1108,32 +1198,33 @@ public class GameAPI
     }
     
     private List<CardInstance> GetSelectedCards(
-    CardInstance? source,
+    CardInstance source,
+    int sourcePos,
+    CardZone sourceZone,
     TargetSelector selector)
     {
         IEnumerable<CardInstance> candidates = GetZoneCards(selector.Zone, source.Owner);
 
         // 1 Side filter
-        if (source != null)
+    
+        candidates = selector.Side switch
         {
-            candidates = selector.Side switch
-            {
-                TargetSide.Ally =>
-                    candidates.Where(c => c.Owner == source.Owner),
+            TargetSide.Ally =>
+                candidates.Where(c => c.Owner == source.Owner),
 
-                TargetSide.Enemy =>
-                    candidates.Where(c => c.Owner != source.Owner),
+            TargetSide.Enemy =>
+                candidates.Where(c => c.Owner != source.Owner),
 
-                _ => candidates
-            };
-        }
+            _ => candidates
+        };
+    
 
         // 2 Face filter (ONLY BOARD)
         if (selector.Zone == CardZone.Board &&
             selector.Face == FaceConstraint.SameFace &&
             source is UnitInstance sourceUnit)
         {
-            var sourceFace = Board.GetFaceOfSticker(sourceUnit.Position);
+            var sourceFace = Board.GetFaceOfSticker(sourcePos);
 
             candidates = candidates.Where(c =>
                 c is UnitInstance u &&
@@ -1252,7 +1343,9 @@ public class GameAPI
         Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddAbilityRequestEvent>(AddAbility, SubscriberOwnerType.API, this);
         Bus.Subscribe<MoveCardRequestEvent>(MoveCard, SubscriberOwnerType.API, this);
-        
+        Bus.Subscribe<CreateCardRequestEvent>(CreateCard, SubscriberOwnerType.API, this);
+        Bus.Subscribe<ChangeRemainingUnitCounterRequestEvent>(ChangeRemainingUnitsCounter, SubscriberOwnerType.API, this);
+        Bus.Subscribe<ChangeRemainingRotationCounterRequestEvent>(ChangeRemainingRotationsCounter, SubscriberOwnerType.API, this);
     }
     private void UnsubscribeFromCardEvents(){}
 
@@ -1298,6 +1391,7 @@ public class GameAPI
                 RotationPhaseStarted?.Invoke(e);
                 Bus.Publish(e);
                 rotationCounter = 1;
+                extraRotationCounter = 0;
                 return;
             }
             case GameState.RotatePhase:

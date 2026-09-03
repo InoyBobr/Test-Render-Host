@@ -18,6 +18,8 @@ public class Buff_self_on_strong_allies : AbilityLogic
     {
         if(!OnBoardAbilityActive)
             return;
+        if(e.Card != OwnerUnit)
+            return;
         if (!State.IntValues.TryGetValue("minimum_power", out var minPow))
             return;
         var ctx = Owner._api.GetContext(Owner.Owner);
