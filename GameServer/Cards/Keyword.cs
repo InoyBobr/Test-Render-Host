@@ -2,7 +2,7 @@ public enum Keyword
 {
     QuickAttack,
     DoubleAttack,
-    Hoard,
+    Horde,
     Flying,
     Silenced,
     Shield,

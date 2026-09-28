@@ -14,6 +14,7 @@ public abstract class CardInstance
     public Player Owner { get; }
 
     public StickerColor Color => Definition.Color;
+    public List<CardTag> Tags => Definition.Tags;
 
     public List<AbilityState> Abilities = new();
     public List<AbilityState> AddedAbilities = new();

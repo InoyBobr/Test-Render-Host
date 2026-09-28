@@ -1,0 +1,17 @@
+{
+  "CardId": "Wealth",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "wealth_ability",
+      "Parameters": [
+        {"key" : "amount", "value" : 1}
+      ]
+    }
+  ],
+  "tags": []
+}

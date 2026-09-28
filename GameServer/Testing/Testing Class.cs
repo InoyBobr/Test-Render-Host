@@ -162,8 +162,8 @@ public class TestingClass
             api);
 
         SubscribeToAllEventsWithJsonPrint(api, player1);
-
         api.StartGame(player1, player2);
+        Console.WriteLine(player1.GetHand()[0].Tags.Count);
         api.TryPlayCard(player1, 0, 2);
         Thread.Sleep(100);
         api.EndTurn(player1);
@@ -188,7 +188,7 @@ public class TestingClass
                      "basePower": 2,
                      "baseHealth": 8,
                      "color": "Red",
-                     "keywords": ["Hoard", "DoubleAttack"],
+                     "keywords": ["Horde", "DoubleAttack"],
                      "abilities": [
                      {
                         "AbilityId" : "test_ability",

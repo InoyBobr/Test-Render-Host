@@ -337,7 +337,7 @@ public class CreateCardRequestEvent : IGameEvent
 
 public class CardCreatedEvent : CardEvent
 {
-    private CardInstance Source;
+    public CardInstance Source;
     public CardCreatedEvent(CardInstance card, CardInstance source)
     {
         Card = card;
@@ -474,22 +474,22 @@ public class PlayerScoredEvent(int amount, int score, Player player) : IGameEven
     public readonly Player Player = player;
 }
 
-public class ChangeRemainingUnitCounterRequestEvent(int amount, bool isHoard, bool setValue, bool canBeNegative, CardInstance? source = null)
+public class ChangeRemainingUnitCounterRequestEvent(int amount, bool isHorde, bool setValue, bool canBeNegative, CardInstance? source = null)
     : IGameEvent
 {
     public bool Allowed = true;
     public int Amount = amount;
-    public bool IsHoard = isHoard;
+    public bool IsHorde = isHorde;
     public bool SetValue = setValue;
     public bool CanBeNegative = canBeNegative;
     public CardInstance? Source = source;
 }
 
-public class RemainingUnitCounterChangedEvent(int amount, int current, bool hoard, bool valueSet, CardInstance? source) : IGameEvent
+public class RemainingUnitCounterChangedEvent(int amount, int current, bool Horde, bool valueSet, CardInstance? source) : IGameEvent
 {
     public readonly int Amount = amount;
     public readonly int Current = current;
-    public readonly bool Hoard = hoard;
+    public readonly bool Horde = Horde;
     public readonly bool ValueSet = valueSet;
     public readonly CardInstance? Source = source;
 }

@@ -1,0 +1,9 @@
+{
+  "CardId": "Slime Token",
+  "Type": "Unit",
+  "basePower": 1,
+  "baseHealth": 1,
+  "color": "Red",
+  "keywords": [],
+  "abilities": []
+}

@@ -14,5 +14,6 @@
       "AbilityId": "disable_enemy_score_gain",
       "Parameters": []
     }
-  ]
+  ],
+  "tags": []
 }

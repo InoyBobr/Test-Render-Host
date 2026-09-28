@@ -4,7 +4,7 @@
   "basePower": 1,
   "baseHealth": 1,
   "color": "Red",
-  "keywords": ["Hoard"],
+  "keywords": ["Horde"],
   "abilities": [
     {
       "AbilityId": "damage_all_enemies_on_face_after_death",
@@ -12,5 +12,6 @@
         {"key" : "damage", "value" : 2}
       ]
     }
-  ]
+  ],
+  "tags": []
 }

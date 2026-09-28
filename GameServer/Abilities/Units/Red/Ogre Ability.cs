@@ -1,8 +1,6 @@
 [AbilityId("ogre_ability")]
-public class OgreAbility : AbilityLogic
+public class OgreAbility(AbilityState state) : AbilityLogic(state)
 {
-    public OgreAbility(AbilityState state) : base(state) {}
-
     private bool active;
     
     public override void OnGain()

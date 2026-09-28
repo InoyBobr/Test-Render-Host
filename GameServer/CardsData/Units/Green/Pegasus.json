@@ -10,5 +10,6 @@
       "AbilityId": "give_ally_quick_attack",
       "Parameters": []
     }
-  ]
+  ],
+  "tags": []
 }

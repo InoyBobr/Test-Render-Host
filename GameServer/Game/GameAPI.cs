@@ -13,6 +13,9 @@ public class GameAPI
     public Player Player1 { get; private set; }
     public Player Player2 { get; private set; }
 
+    public Player FirstPlayer => Round % 2 == 1 ? Player1 : Player2;
+    public Player SecondPlayer => Round % 2 == 0 ? Player1 : Player2;
+
     private GameState _gameState = GameState.Start;
 
     // Поле
@@ -31,15 +34,17 @@ public class GameAPI
     // Текущий раунд
     public int Round { get; private set; } = 1;
 
+    public List<IGameEvent> History { get; private set; } = new();
+
     // Количество карт, которое игрок берёт в начале игры или хода
     public const int StartDrawCount = 5;
     public const int MaxUnitsPerTurn = 1;
     public const int MaxUnitsInFirstRound = 3;
-    public const int ExtraUnitsPerHoard = 1;
+    public const int ExtraUnitsPerHorde = 1;
 
     public const int FlyingMaxDamage = 1;
     private int unitCounter = 0;
-    private int hoardCounter = 0;
+    private int hordeCounter = 0;
     private int rotationCounter = 0;
     private int extraRotationCounter = 0;
     
@@ -70,6 +75,9 @@ public class GameAPI
     public event Action<KeywordRemovedEvent>? KeywordRemoved;
     public event Action<KeywordsRemovedEvent>? KeywordsRemoved;
     public event Action<ColorChangedEvent>? ColorChanged;
+    public event Action<CardMovedEvent>? CardMoved;
+    public event Action<RemainingUnitCounterChangedEvent>? UnitCounterChanged;
+    public event Action<RemainingRotationCounterChangedEvent>? RotationCounterChanged; 
     public event Action<Player?>? GameOver; 
 
 
@@ -97,10 +105,12 @@ public class GameAPI
         Round = 1;
         Player1 = player1;
         Player2 = player2;
-        Bus.Publish(new GameStartedEvent());
+        var gameStarted = new GameStartedEvent();
+        History.Add(gameStarted);
+        Bus.Publish(gameStarted);
         GameStarted?.Invoke();
-        var p1 =TryDrawCards(player1, StartDrawCount);
-        var p2 =TryDrawCards(player2, StartDrawCount);
+        var p1 = TryDrawCards(player1, StartDrawCount);
+        var p2 = TryDrawCards(player2, StartDrawCount);
         StartTurn(player1, false);
     }
 
@@ -110,13 +120,14 @@ public class GameAPI
         SetGameState(GameState.PlayPhase);
         CurrentPlayer = player;
         var e = new PlayerTurnStarted(player, battle);
+        History.Add(e);
         TurnStarted?.Invoke(e);
         Bus.Publish(e);
         TryDrawCards(player, 1);
         unitCounter = MaxUnitsPerTurn;
         if (Round == 1)
             unitCounter = MaxUnitsInFirstRound;
-        hoardCounter = 0;
+        hordeCounter = 0;
     }
 
     public void EndTurn(Player player)
@@ -153,6 +164,7 @@ public class GameAPI
         {
             var card = e.Player.DrawTopCard();
             var drawEvent = new CardDrawnEvent(card, e.Player);
+            History.Add(drawEvent);
             CardDrawn?.Invoke(drawEvent);
             Bus.Publish(drawEvent);
         }
@@ -206,8 +218,8 @@ public class GameAPI
 
         if (isUnit)
         {
-            if (!((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && unitCounter <= 0 ||
-                ((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && unitCounter <= 0 && hoardCounter <= 0 )
+            if (!((UnitInstance)card).Keywords.Contains(Keyword.Horde) && unitCounter <= 0 ||
+                ((UnitInstance)card).Keywords.Contains(Keyword.Horde) && unitCounter <= 0 && hordeCounter <= 0 )
             {
                 CardPlayedResult?.Invoke(new PlayCardResult { Success = false, Error = "Unit limit", Player = player});
                 return;
@@ -446,16 +458,16 @@ public class GameAPI
 
         if (isUnit)
         {
-            if (((UnitInstance)card).Keywords.Contains(Keyword.Hoard) && hoardCounter > 0)
+            if (((UnitInstance)card).Keywords.Contains(Keyword.Horde) && hordeCounter > 0)
             {
-                hoardCounter--;
+                hordeCounter--;
             }
             else
             {
                 unitCounter--;
-                if (((UnitInstance)card).Keywords.Contains(Keyword.Hoard))
+                if (((UnitInstance)card).Keywords.Contains(Keyword.Horde))
                 {
-                    hoardCounter += ExtraUnitsPerHoard;
+                    hordeCounter += ExtraUnitsPerHorde;
                 }
             }
             Board.PlaceCard((UnitInstance)card, position.Value);
@@ -470,6 +482,7 @@ public class GameAPI
 
         CardPlayedResult?.Invoke(new PlayCardResult { Success = true, Player = player });
         var e = new CardPlayedEvent(card, position.Value);
+        History.Add(e);
         CardPlayed?.Invoke(e);
         Bus.Publish(e);
     }
@@ -632,6 +645,7 @@ public class GameAPI
         
         FaceRotatedResult?.Invoke(new RotateFaceResult{Success=true, Player = player});
         var e = new FaceRotatedEvent(face, amountOfRotations, player);
+        History.Add(e);
         FaceRotated?.Invoke(e);
         Bus.Publish(e);
        
@@ -656,16 +670,22 @@ public class GameAPI
     {
         BattleStarted?.Invoke();
         Bus.StartBattleMode();
-        Bus.Publish(new PreBattlePhaseStarted());
+        var preBattleStart = new PreBattlePhaseStarted();
+        History.Add(preBattleStart);
+        Bus.Publish(preBattleStart);
         Bus.EndBattleMode();
-        Bus.Publish(new PreBattlePhaseEnded());
+        var preBattleEnd = new PreBattlePhaseEnded();
+        History.Add(preBattleEnd);
+        Bus.Publish( preBattleEnd);
         
     }
 
     private void BattlePhase()
     {
         Bus.StartBattleMode();
-        Bus.Publish(new BattlePhaseStarted());
+        var battleStart = new BattlePhaseStarted();
+        History.Add(battleStart);
+        Bus.Publish(battleStart);
         foreach (var card in Board.GetAllCards())
         {
             //Атакует только быстрая атака и двойная атака
@@ -711,7 +731,10 @@ public class GameAPI
                 }
             }
         }
-        Bus.Publish(new BattlePhaseEnded());
+
+        var battleEnd = new BattlePhaseEnded();
+        History.Add(battleEnd);
+        Bus.Publish(battleEnd);
         ResolveCombatDamage();
         Bus.EndBattleMode(); 
     }
@@ -719,9 +742,13 @@ public class GameAPI
     private void PostBattlePhase()
     {
         Bus.StartBattleMode();
-        Bus.Publish(new PostBattlePhaseStarted());
+        var postBattleStart = new PostBattlePhaseStarted();
+        History.Add(postBattleStart);
+        Bus.Publish(postBattleStart);
         Bus.EndBattleMode();
-        Bus.Publish(new PostBattlePhaseEnded());
+        var postBattleEnd = new PostBattlePhaseEnded();
+        History.Add(postBattleEnd);
+        Bus.Publish(postBattleEnd);
         BattleEnded?.Invoke();
         AwakeAll();
     }
@@ -734,6 +761,7 @@ public class GameAPI
             {
                 card.Keywords.Remove(Keyword.Sleeping);
                 var ev = new KeywordRemovedEvent(Keyword.Sleeping, card, null);
+                History.Add(ev);
                 KeywordRemoved?.Invoke(ev);
                 Bus.Publish(ev);
                 
@@ -810,6 +838,7 @@ public class GameAPI
         {
             Player1Score += e.Amount;
             var scoredEvent = new PlayerScoredEvent(e.Amount, Player1Score, e.Player);
+            History.Add(scoredEvent);
             PlayerScored?.Invoke(scoredEvent);
             Bus.Publish(scoredEvent);
         }
@@ -818,6 +847,7 @@ public class GameAPI
         {
             Player2Score += e.Amount;
             var scoredEvent = new PlayerScoredEvent(e.Amount, Player2Score, e.Player);
+            History.Add(scoredEvent);
             PlayerScored?.Invoke(scoredEvent);
             Bus.Publish(scoredEvent);
         }
@@ -839,6 +869,7 @@ public class GameAPI
     }
     private void RemoveDeadCard(CardKilledEvent e)
     {
+        History.Add(e);
         CardKilled?.Invoke(e);
         Board.RemoveCard(e.Unit);
         e.Card.Owner.AddToDiscard(e.Card);
@@ -886,6 +917,7 @@ public class GameAPI
         {
             e.Unit.Keywords.Remove(Keyword.Shield);
             var shieldEvent = new ShieldBrokenEvent(e.Unit);
+            History.Add(shieldEvent);
             ShieldBroken?.Invoke(shieldEvent);
             Bus.Publish(shieldEvent);
             return;
@@ -920,6 +952,7 @@ public class GameAPI
                 unit.Keywords.Remove(Keyword.Shield);
 
                 var shieldEvent = new ShieldBrokenEvent(unit);
+                History.Add(shieldEvent);
                 ShieldBroken?.Invoke(shieldEvent);
                 Bus.Publish(shieldEvent);
 
@@ -968,6 +1001,7 @@ public class GameAPI
         if (e.Unit.Keywords.Contains(e.Keyword)) return;
         e.Unit.Keywords.Add(e.Keyword);
         var ev = new KeywordAddedEvent(e.Keyword, e.Unit, e.Source);
+        History.Add(ev);
         KeywordAdded?.Invoke(ev);
         Bus.Publish(ev);
     }
@@ -979,6 +1013,7 @@ public class GameAPI
         if (e.Unit.Keywords.Contains(e.Keyword)) return;
         e.Unit.Keywords.Remove(e.Keyword);
         var ev = new KeywordRemovedEvent(e.Keyword, e.Unit, e.Source);
+        History.Add(ev);
         KeywordRemoved?.Invoke(ev);
         Bus.Publish(ev);
     }
@@ -989,6 +1024,7 @@ public class GameAPI
             return;
         var ev = new KeywordsRemovedEvent(e.Unit.Keywords, e.Unit, e.Source);
         e.Unit.Keywords.Clear();
+        History.Add(ev);
         KeywordsRemoved?.Invoke(ev);
         Bus.Publish(ev);
     }
@@ -1008,7 +1044,10 @@ public class GameAPI
         var start = e.Unit.Position;
         if (Board.MoveCard(e.Unit, e.Position, e.SwapAllowed))
         {
-            Bus.Publish(new CardMovedEvent(e.Unit, start, e.Position, Board.GetCard(start), e.Source));
+            var ev = new CardMovedEvent(e.Unit, start, e.Position, Board.GetCard(start), e.Source);
+            History.Add(ev);
+            Bus.Publish(ev);
+            CardMoved?.Invoke(ev);
         }
     }
 
@@ -1037,12 +1076,12 @@ public class GameAPI
                 var validPos = Enumerable.Range(0, 24).Where(Board.IsPositionEmpty).ToList();
                 if (validPos.Count == 0)
                     return;
-                var rnd = new Random();
-                int position = validPos[rnd.Next(validPos.Count)];
+                int position = validPos[_random.Next(validPos.Count)];
                 var unit = CardFactory.Create(data, owner, this, CardZone.Board) as UnitInstance;
                 Board.PlaceCard(unit, position);
                 unit.Position = position;
                 ev = new CardCreatedEvent(unit, e.Source);
+                History.Add(ev);
                 Bus.Publish(ev);
                 CardCreated?.Invoke(ev);
             }
@@ -1052,6 +1091,7 @@ public class GameAPI
                 Board.PlaceCard(unit, e.Position.Value);
                 unit.Position = e.Position.Value;
                 ev = new CardCreatedEvent(unit, e.Source);
+                History.Add(ev);
                 Bus.Publish(ev);
                 CardCreated?.Invoke(ev);
             }
@@ -1060,6 +1100,7 @@ public class GameAPI
         var card = CardFactory.Create(data, owner, this, e.Zone);
         owner.AddCard(card, e.Position, e.Zone);
         ev = new CardCreatedEvent(card, e.Source);
+        History.Add(ev);
         Bus.Publish(ev);
         CardCreated?.Invoke(ev);
     }
@@ -1071,7 +1112,7 @@ public class GameAPI
             return;
         if(e.Amount < 0 && !e.CanBeNegative || e.Amount == 0)
             return;
-        switch (e.IsHoard, e.SetValue)
+        switch (e.IsHorde, e.SetValue)
         {
             case (false, false):
             {
@@ -1080,7 +1121,7 @@ public class GameAPI
             }
             case (true, false):
             {
-                hoardCounter += e.Amount;
+                hordeCounter += e.Amount;
                 break;
             }
             case (false, true):
@@ -1090,11 +1131,17 @@ public class GameAPI
             }
             case (true, true):
             {
-                hoardCounter = e.Amount;
+                hordeCounter = e.Amount;
                 break;
             }
         }
-        Bus.Publish(new RemainingUnitCounterChangedEvent(e.Amount, e.IsHoard ? hoardCounter : unitCounter, e.IsHoard, e.SetValue, e.Source));
+
+        var ev = new RemainingUnitCounterChangedEvent(e.Amount, e.IsHorde ? hordeCounter : unitCounter, e.IsHorde,
+            e.SetValue, e.Source);
+        History.Add(ev);
+        Bus.Publish(ev);
+        UnitCounterChanged?.Invoke(ev);
+        
     }
 
     private void ChangeRemainingRotationsCounter(ChangeRemainingRotationCounterRequestEvent e)
@@ -1106,20 +1153,19 @@ public class GameAPI
             case < 0 when !e.CanBeNegative:
             case 0:
                 return;
+
+            case < 0 when e.SetValue:
+            case > 0 when e.SetValue:
+            {
+                extraRotationCounter = e.Amount;
+                break;
+            }
+
             case > 0 when !e.SetValue:
                 extraRotationCounter += e.Amount;
-                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
                 break;
-        }
-
-        switch (e.Amount)
-        {
-            case > 0 when e.SetValue:
-                extraRotationCounter = e.Amount;
-                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
-                break;
+            
             case < 0 when !e.SetValue:
-            {
                 extraRotationCounter += e.Amount;
                 if (extraRotationCounter < 0)
                 {
@@ -1130,16 +1176,13 @@ public class GameAPI
                         rotationCounter = 0;
                     }
                 }
-                Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
                 break;
-            }
         }
 
-        if (e.Amount < 0 && e.SetValue)
-        {
-            extraRotationCounter = e.Amount;
-            Bus.Publish(new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source));
-        }
+        var ev = new RemainingRotationCounterChangedEvent(e.Amount, e.SetValue, e.Source);
+        History.Add(ev);
+        Bus.Publish(ev);
+        RotationCounterChanged?.Invoke(ev);
     }
 
     //Методы куба
@@ -1150,6 +1193,7 @@ public class GameAPI
             return;
         Board.ChangeColor(e.Position, e.Color);
         var ev = new ColorChangedEvent(e.Position, e.Color, e.Source);
+        History.Add(ev);
         ColorChanged?.Invoke(ev);
         Bus.Publish(ev);
     }
@@ -1175,11 +1219,13 @@ public class GameAPI
     //10. Методы уведомлений
     private void BuffNotify(CardBuffedEvent e)
     {
+        History.Add(e);
         CardBuffed?.Invoke(e);
     }
 
     private void DamageNotify(CardDamagedEvent e)
     {
+        History.Add(e);
         CardDamaged?.Invoke(e);
     }
     
@@ -1368,6 +1414,7 @@ public class GameAPI
                 if (Round == 1)
                 {
                     var ev = new PlayerTurnEnded(CurrentPlayer);
+                    History.Add(ev);
                     TurnEnded?.Invoke(ev);
                     Bus.Publish(ev);
                     if (CurrentPlayer == firstPlayer)
@@ -1377,9 +1424,12 @@ public class GameAPI
                     }
                     else
                     {
-                        Bus.Publish(new RoundEnded(Round));
+                        var re = new RoundEnded(Round);
+                        History.Add(re);
+                        Bus.Publish(re);
                         Round += 1;
                         var rse = new RoundStarted(Round);
+                        History.Add(rse);
                         RoundStarted?.Invoke(rse);
                         Bus.Publish(rse);
                         StartTurn(secondPlayer, false);
@@ -1388,6 +1438,7 @@ public class GameAPI
                 }
                 SetGameState(GameState.RotatePhase);
                 var e = new PlayerRotationPhaseStarted(CurrentPlayer);
+                History.Add(e);
                 RotationPhaseStarted?.Invoke(e);
                 Bus.Publish(e);
                 rotationCounter = 1;
@@ -1397,6 +1448,7 @@ public class GameAPI
             case GameState.RotatePhase:
             {
                 var e = new PlayerTurnEnded(CurrentPlayer);
+                History.Add(e);
                 TurnEnded?.Invoke(e);
                 Bus.Publish(e);
                 if (CurrentPlayer == firstPlayer)
@@ -1413,13 +1465,17 @@ public class GameAPI
                 CalculateScores();
                 return;
             case GameState.RewardingPhase:
-                Bus.Publish(new RoundEnded(Round));
+            {
+                var re = new RoundEnded(Round);
+                History.Add(re);
+                Bus.Publish(re);
                 Round += 1;
                 var roundStartEvent = new RoundStarted(Round);
                 RoundStarted?.Invoke(roundStartEvent);
                 Bus.Publish(roundStartEvent);
                 StartTurn(secondPlayer, false);
                 break;
+            }
         }
     }
 }

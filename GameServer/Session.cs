@@ -192,6 +192,7 @@ public class Session
                 you = (p == e.Player),
                 battle = e.BattleIsComing
             });
+        
         api.RotationPhaseStarted += e =>
             _ = Broadcast(p => new
             {
@@ -266,6 +267,16 @@ public class Session
                 pos = e.Card.Position,
                 killer = e.SourcePos
             });
+        
+        api.CardMoved += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "card_moved",
+                from = e.From,
+                to = e.To,
+                source = e.Source?.Position
+                
+            });
 
         api.ShieldBroken += e =>
             _ = Broadcast(_ => new
@@ -323,6 +334,7 @@ public class Session
                     error = e.Error
                 };
             });
+        
         api.FaceRotated += e =>
             _ = Broadcast(_ => new
             {
@@ -358,6 +370,7 @@ public class Session
                     you = you
                 };
             });
+        
         api.CardCreated += e =>
             _ = Broadcast(p =>
             {
@@ -408,6 +421,7 @@ public class Session
                         return new { };
                 }
             });
+        
         api.KeywordAdded += e =>
             _ = Broadcast(_ => new
             {
@@ -416,6 +430,7 @@ public class Session
                 position = e.Card.Position,
                 source = e.Source?.Position
             });
+        
         api.KeywordRemoved += e =>
             _ = Broadcast(_ => new
             {
@@ -424,6 +439,7 @@ public class Session
                 position = e.Card.Position,
                 source = e.Source?.Position
             });
+        
         api.KeywordsRemoved += e =>
             _ = Broadcast(_ => new
             {
@@ -432,6 +448,7 @@ public class Session
                 position = e.Card.Position,
                 source = e.Source?.Position
             });
+        
         api.ColorChanged += e =>
             _ = Broadcast(_ => new
             {
@@ -439,6 +456,27 @@ public class Session
                 position = e.Position,
                 color = e.Color
             });
+        
+        api.UnitCounterChanged += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "unit_counter_changed",
+                amount = e.Amount,
+                set = e.ValueSet,
+                current = e.Current,
+                Horde = e.Horde,
+                source = e.Source?.Position,
+            });
+        
+        api.RotationCounterChanged += e =>
+            _ = Broadcast(_ => new
+            {
+                type = "rotation_counter_changed",
+                amount = e.Amount,
+                set = e.ValueSet,
+                source = e.Source?.Position
+            });
+        
         api.GameOver += e =>
         {
             _ = Broadcast(p =>

@@ -12,5 +12,6 @@
         {"key" : "minimum_power", "value" : 4}
       ]
     }
-  ]
+  ],
+  "tags": []
 }

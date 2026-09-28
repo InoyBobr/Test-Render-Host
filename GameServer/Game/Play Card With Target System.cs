@@ -188,14 +188,14 @@ public class GameContext
             return _previewPosition;
 
         if (card is UnitInstance unit)
-            return Board.GetPosition(unit);
+            return _board.GetPosition(unit);
 
         return null;
     }
 
     public StickerColor GetColor(int pos)
     {
-        return Board.GetColor(pos);
+        return _board.GetColor(pos);
     }
 }
 

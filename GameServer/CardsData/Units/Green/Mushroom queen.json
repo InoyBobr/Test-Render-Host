@@ -10,5 +10,6 @@
       "AbilityId": "gain_shield_on_ally_death",
       "Parameters": []
     }
-  ]
+  ],
+  "tags": []
 }

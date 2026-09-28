@@ -10,5 +10,6 @@
       "AbilityId": "silence_on_deploy",
       "Parameters": []
     }
-  ]
+  ],
+  "tags": []
 }

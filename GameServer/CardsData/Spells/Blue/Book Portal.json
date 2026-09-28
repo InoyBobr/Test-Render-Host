@@ -12,5 +12,6 @@
         {"key" : "amount", "value" : 3}
       ]
     }
-  ]
+  ],
+  "tags": []
 }

@@ -12,5 +12,6 @@
         {"key" : "damageBuff", "value" : 1}
       ]
     }
-  ]
+  ],
+  "tags": []
 }

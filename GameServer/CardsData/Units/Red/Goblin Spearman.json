@@ -4,6 +4,7 @@
   "basePower": 2,
   "baseHealth": 3,
   "color": "Red",
-  "keywords": ["Hoard"],
-  "abilities": []
+  "keywords": ["Horde"],
+  "abilities": [],
+  "tags": []
 }

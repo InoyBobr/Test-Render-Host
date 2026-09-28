@@ -12,5 +12,6 @@
         {"key" : "damage", "value" : 3}
       ]
     }
-  ]
+  ],
+  "tags": []
 }
