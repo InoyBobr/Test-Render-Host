@@ -922,7 +922,9 @@ public class GameAPI
             Bus.Publish(shieldEvent);
             return;
         }
+        
         e.Unit.TakeDamage(new CardNonCombatDamagedEvent(e.Unit, e.Damage, e.Source));
+        
     }
 
     private void DamageRandomCard(RandomCardDamageRequestEvent e)

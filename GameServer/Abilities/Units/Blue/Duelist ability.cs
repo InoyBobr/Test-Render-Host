@@ -1,9 +1,7 @@
 namespace GameServer.Abilities;
 [AbilityId("duelist_ability")]
-public class DuelistAbility : AbilityLogic
+public class DuelistAbility(AbilityState state) : AbilityLogic(state)
 {
-    public DuelistAbility(AbilityState state) : base(state) {}
-    
     public override void OnGain()
     {
         Bus.Subscribe<BattlePhaseEnded>(OnBattleEnded, SubscriberOwnerType.Card, Owner);

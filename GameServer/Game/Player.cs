@@ -112,7 +112,7 @@ public class Player
             }
             case CardZone.Hand:
             {
-                position ??= rnd.Next(_hand.Count + 1);
+                position ??= -1;
                 if(position < 0 || position > _hand.Count)
                     _hand.Add(card);
                 else

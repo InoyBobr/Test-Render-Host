@@ -13,6 +13,8 @@ public abstract class CardInstance
     public CardData Definition { get; }
     public Player Owner { get; }
 
+    
+
     public StickerColor Color => Definition.Color;
     public List<CardTag> Tags => Definition.Tags;
 
@@ -21,6 +23,7 @@ public abstract class CardInstance
 
     public int Position;
     public CardZone Zone;
+    
 
     public GameAPI _api { get; init; }
     public EventBus Bus { get; }
@@ -31,7 +34,7 @@ public abstract class CardInstance
         Definition = def;
         Owner = owner;
         Zone = zone;
-
+        
         _api = api;
         Bus = api.Bus;
 

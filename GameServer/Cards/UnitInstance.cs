@@ -10,6 +10,7 @@ public class UnitInstance : CardInstance
 
     public int CurrentHealth => _currentHealth;
     public int CurrentPower => _currentPower;
+    
 
     private HashSet<Keyword> _keywords = new();
     public HashSet<Keyword> Keywords => _keywords;

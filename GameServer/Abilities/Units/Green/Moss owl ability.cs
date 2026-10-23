@@ -7,17 +7,17 @@ public class MossOwlAbility : AbilityLogic
     
     public override void OnGain()
     {
-        Bus.Subscribe<CardNonCombatDamagedEvent>(DealDamageOnAllyDamagedbyAlly, SubscriberOwnerType.Card, Owner);
-        Bus.Subscribe<CardCombatDamagedEvent>(DealDamageOnAllyDamagedbyAlly, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<CardNonCombatDamagedEvent>(DealDamageOnAllyDamagedByAlly, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<CardCombatDamagedEvent>(DealDamageOnAllyDamagedByAlly, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<CardNonCombatDamagedEvent>(DealDamageOnAllyDamagedbyAlly, Owner);
-        Bus.Unsubscribe<CardCombatDamagedEvent>(DealDamageOnAllyDamagedbyAlly, Owner);
+        Bus.Unsubscribe<CardNonCombatDamagedEvent>(DealDamageOnAllyDamagedByAlly, Owner);
+        Bus.Unsubscribe<CardCombatDamagedEvent>(DealDamageOnAllyDamagedByAlly, Owner);
     }
 
-    private void DealDamageOnAllyDamagedbyAlly(CardDamagedEvent e)
+    private void DealDamageOnAllyDamagedByAlly(CardDamagedEvent e)
     {
         if(!OnBoardAbilityActive)
             return;

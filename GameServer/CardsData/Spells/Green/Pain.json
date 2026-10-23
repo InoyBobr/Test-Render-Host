@@ -1,0 +1,17 @@
+{
+  "CardId": "Pain",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "pain_ability",
+      "Parameters": [
+        {"key" : "damage", "value" : 1}
+      ]
+    }
+  ],
+  "tags": []
+}
