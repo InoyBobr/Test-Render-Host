@@ -414,7 +414,7 @@ public class Session
             _ = Broadcast(_ => new
             {
                 type = "card_killed",
-                pos = e.Card.Position,
+                position = e.Card.Position,
                 killer = e.SourcePos
             });
         
@@ -432,7 +432,7 @@ public class Session
             _ = Broadcast(_ => new
             {
                 type = "shield_broken",
-                pos = e.Unit.Position
+                position = e.Unit.Position
             });
 
         api.ChoiceStarted += e =>
