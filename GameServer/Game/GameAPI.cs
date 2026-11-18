@@ -63,6 +63,8 @@ public class GameAPI
     public event Action<CardDamagedEvent>? CardDamaged;
     public event Action<CardBuffedEvent>? CardBuffed;
     public event Action<CardKilledEvent>? CardKilled;
+    public event Action<StatsSettedEvent>? StatsSetted;
+    public event Action<PowerReducedEvent>? PowerReduced;
     public event Action<CardCreatedEvent>? CardCreated; 
     public event Action<ShieldBrokenEvent>? ShieldBroken; 
     public event Action<ChoiceContext>? ChoiceStarted;
@@ -163,7 +165,7 @@ public class GameAPI
         for (int i = 0; i < minimum; i++)
         {
             var card = e.Player.DrawTopCard();
-            var drawEvent = new CardDrawnEvent(card, e.Player);
+            var drawEvent = new CardDrawnEvent(card, e.Player, e.Source);
             History.Add(drawEvent);
             CardDrawn?.Invoke(drawEvent);
             Bus.Publish(drawEvent);
@@ -173,6 +175,20 @@ public class GameAPI
     } // фактическое действие и событие CardDrawnEvent
 
     // 4. Розыгрыш карт
+    
+    private void DrawExactCard(DrawExactCardRequestEvent e)
+    {
+        if(!e.Allowed)
+            return;
+        if(!e.Player.GetDeck().Contains(e.Card))
+            return;
+        if(!e.Player.DrawExactCard(e.Card))
+            return;
+        var drawEvent = new CardDrawnEvent(e.Card, e.Player, e.Source);
+        History.Add(drawEvent);
+        CardDrawn?.Invoke(drawEvent);
+        Bus.Publish(drawEvent);
+    }
 
     public void TryPlayCard(
     Player player,
@@ -996,12 +1012,43 @@ public class GameAPI
         }
     }
 
+    private void SetStats(SetStatsRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        if (e.Type == SetStatsType.Buff)
+        {
+            if (e.Power != null && e.Unit.CurrentPower > e.Power)
+                e.Power = null;
+            if (e.Health != null && e.Unit.CurrentHealth > e.Health)
+                e.Health = null;
+        }
+        if (e.Type == SetStatsType.Debuff)
+        {
+            if (e.Power != null && e.Unit.CurrentPower < e.Power)
+                e.Power = null;
+            if (e.Health != null && e.Unit.CurrentHealth < e.Health)
+                e.Health = null;
+        }
+        if(e.Power == null && e.Health == null)
+            return;
+        
+        e.Unit.SetStats(new StatsSettedEvent(e.Unit, e.Power, e.Health, e.Source));
+    }
+
+    private void ReducePower(ReducePowerRequestEvent e)
+    {
+        if(!e.Allowed)
+            return;
+        e.Unit.RemovePower(new PowerReducedEvent(e.Unit, Math.Min(e.Power, e.Unit.CurrentPower), e.Source));
+    }
+
     private void AddKeyword(AddKeywordRequestEvent e)
     {
         if (!e.Allowed)
             return;
-        if (e.Unit.Keywords.Contains(e.Keyword)) return;
-        e.Unit.Keywords.Add(e.Keyword);
+        if (!e.Unit.Keywords.Add(e.Keyword))
+            return;
         var ev = new KeywordAddedEvent(e.Keyword, e.Unit, e.Source);
         History.Add(ev);
         KeywordAdded?.Invoke(ev);
@@ -1230,6 +1277,18 @@ public class GameAPI
         History.Add(e);
         CardDamaged?.Invoke(e);
     }
+
+    private void PowerReducedNotify(PowerReducedEvent e)
+    {
+        History.Add(e);
+        PowerReduced?.Invoke(e);
+    }
+
+    private void StatsSettedNotify(StatsSettedEvent e)
+    {
+        History.Add(e);
+        StatsSetted?.Invoke(e);
+    }
     
     private IEnumerable<CardInstance> GetZoneCards(CardZone zone, Player? player)
     {
@@ -1377,6 +1436,7 @@ public class GameAPI
         Bus.Subscribe<CardNonCombatDamageRequestEvent>(ApplyNonCombatDamage, SubscriberOwnerType.API, this);
         Bus.Subscribe<RandomCardDamageRequestEvent>(DamageRandomCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardDrawRequestEvent>(DrawCards, SubscriberOwnerType.API, this);
+        Bus.Subscribe<DrawExactCardRequestEvent>(DrawExactCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardKillRequestEvent>(KillCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardKilledEvent>(RemoveDeadCard, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardBuffRequestEvent>(BuffCard, SubscriberOwnerType.API, this);
@@ -1385,6 +1445,10 @@ public class GameAPI
         Bus.Subscribe<CardBuffedEvent>(BuffNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
         Bus.Subscribe<CardNonCombatDamagedEvent>(DamageNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<PowerReducedEvent>(PowerReducedNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<StatsSettedEvent>(StatsSettedNotify, SubscriberOwnerType.API, this);
+        Bus.Subscribe<ReducePowerRequestEvent>(ReducePower, SubscriberOwnerType.API, this);
+        Bus.Subscribe<SetStatsRequestEvent>(SetStats, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddKeywordRequestEvent>(AddKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveKeywordRequestEvent>(RemoveKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveAllKeywordsRequestEvent>(RemoveAllKeywords, SubscriberOwnerType.API, this);

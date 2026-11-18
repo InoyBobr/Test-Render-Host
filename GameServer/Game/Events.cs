@@ -130,6 +130,34 @@ public class RandomCardDamageRequestEvent(TargetSelector selector, int damage, C
     public readonly CardZone SourceZone = source.Zone;
 }
 
+public class ReducePowerRequestEvent : UnitEvent
+{
+    public int Power;
+    public CardInstance Source;
+    public bool Allowed = true;
+
+    public ReducePowerRequestEvent(CardInstance card, int power, CardInstance source)
+    {
+        Card = card;
+        Power = power;
+        Source = source;
+    }
+}
+
+public class PowerReducedEvent : UnitEvent
+{
+    public readonly int Power;
+    public readonly CardInstance Source;
+
+    public PowerReducedEvent(UnitInstance unit, int power, CardInstance source)
+    {
+        Card = unit;
+        Power = power;
+        Source = source;
+    }
+}
+
+
 public class ShieldBrokenEvent : UnitEvent
 {
     public ShieldBrokenEvent(UnitInstance unit)
@@ -168,6 +196,45 @@ public class CardBuffRequestEvent : UnitEvent
         PowerDelta = power;
         HealthDelta = health;
         Source = source;
+    }
+}
+
+public enum SetStatsType
+{
+    Full,
+    Buff,
+    Debuff
+}
+public class StatsSettedEvent : UnitEvent
+{
+    public readonly int? Power;
+    public readonly int? Health;
+    public CardInstance Source;
+
+    public StatsSettedEvent(UnitInstance unit, int? power, int? health, CardInstance source)
+    {
+        Card = unit;
+        Power = power;
+        Health = health;
+        Source = source;
+    }
+}
+
+public class SetStatsRequestEvent : UnitEvent
+{
+    public int? Power;
+    public int? Health;
+    public CardInstance Source;
+    public SetStatsType Type;
+    public bool Allowed = true;
+    
+    public SetStatsRequestEvent(UnitInstance unit, int? power, int? health, CardInstance source, SetStatsType statsType = SetStatsType.Full)
+    {
+        Card = unit;
+        Power = power;
+        Health = health;
+        Source = source;
+        Type = statsType;
     }
 }
 
@@ -514,11 +581,13 @@ public class RemainingRotationCounterChangedEvent(int amount, bool valueSet, Car
 public class CardDrawnEvent : CardEvent
 {
     public readonly Player Player;
+    public readonly CardInstance Source;
 
-    public CardDrawnEvent(CardInstance card, Player player)
+    public CardDrawnEvent(CardInstance card, Player player, CardInstance source)
     {
         Card = card;
         Player = player;
+        Source = source;
     }
 }
 
@@ -533,6 +602,20 @@ public class CardDrawRequestEvent : IGameEvent
     {
         Player = player;
         Amount = amount;
+        Source = source;
+    }
+}
+
+public class DrawExactCardRequestEvent : CardEvent
+{
+    public readonly Player Player;
+    public readonly CardInstance Source;
+    public bool Allowed = true;
+
+    public DrawExactCardRequestEvent(CardInstance card, Player player, CardInstance source)
+    {
+        Card = card;
+        Player = player;
         Source = source;
     }
 }

@@ -252,12 +252,162 @@ public class Session
             });
 
         api.CardBuffed += e =>
-            _ = Broadcast(_ => new
+            _ = Broadcast(p =>
             {
-                type = "card_buffed",
-                pos = e.Card.Position,
-                power = e.PowerDelta,
-                health = e.HealthDelta
+                var you = e.Card.Owner == p;
+                switch (e.Card.Zone)
+                {
+                    case CardZone.Board or CardZone.Discard:
+                        return new
+                        {
+                            type = "card_buffed",
+                            power = e.PowerDelta,
+                            health = e.HealthDelta,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand when you:
+                        return new
+                        {
+                            type = "card_buffed",
+                            power = e.PowerDelta,
+                            health = e.HealthDelta,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand:
+                        return new
+                        {
+                            type = "card_buffed",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck when you:
+                        return new
+                        {
+                            type = "card_buffed",
+                            power = e.PowerDelta,
+                            health = e.HealthDelta,
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck:
+                        return new
+                        {
+                            type = "card_buffed",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    default:
+                        return new { };
+                }
+            });
+        
+        api.StatsSetted += e =>
+            _ = Broadcast(p =>
+            {
+                var you = e.Card.Owner == p;
+                switch (e.Card.Zone)
+                {
+                    case CardZone.Board or CardZone.Discard:
+                        return new
+                        {
+                            type = "stats_setted",
+                            power = e.Power,
+                            health = e.Health,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand when you:
+                        return new
+                        {
+                            type = "stats_setted",
+                            power = e.Power,
+                            health = e.Health,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand:
+                        return new
+                        {
+                            type = "stats_setted",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck when you:
+                        return new
+                        {
+                            type = "stats_setted",
+                            power = e.Power,
+                            health = e.Health,
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck:
+                        return new
+                        {
+                            type = "stats_setted",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    default:
+                        return new { };
+                }
+            });
+        
+        api.PowerReduced += e =>
+            _ = Broadcast(p =>
+            {
+                var you = e.Card.Owner == p;
+                switch (e.Card.Zone)
+                {
+                    case CardZone.Board or CardZone.Discard:
+                        return new
+                        {
+                            type = "power_reduced",
+                            power = e.Power,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand when you:
+                        return new
+                        {
+                            type = "power_reduced",
+                            power = e.Power,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand:
+                        return new
+                        {
+                            type = "power_reduced",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck when you:
+                        return new
+                        {
+                            type = "power_reduced",
+                            power = e.Power,
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck:
+                        return new
+                        {
+                            type = "power_reduced",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    default:
+                        return new { };
+                }
             });
 
         api.CardKilled += e =>
@@ -423,12 +573,54 @@ public class Session
             });
         
         api.KeywordAdded += e =>
-            _ = Broadcast(_ => new
+            _ = Broadcast(p =>
             {
-                type = "keyword_added",
-                keyword = e.Keyword,
-                position = e.Card.Position,
-                source = e.Source?.Position
+                var you = e.Card.Owner == p;
+                switch (e.Card.Zone)
+                {
+                    case CardZone.Board or CardZone.Discard:
+                        return new
+                        {
+                            type = "keyword_added",
+                            keyword = e.Keyword,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand when you:
+                        return new
+                        {
+                            type = "keyword_added",
+                            keyword = e.Keyword,
+                            zone = e.Card.Zone,
+                            position = e.Card.Position,
+                            you = you
+                        };
+                    case CardZone.Hand:
+                        return new
+                        {
+                            type = "keyword_added",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck when you:
+                        return new
+                        {
+                            type = "keyword_added",
+                            keyword = e.Keyword,
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    case CardZone.Deck:
+                        return new
+                        {
+                            type = "keyword_added",
+                            zone = e.Card.Zone,
+                            you = you
+                        };
+                    default:
+                        return new { };
+                }
             });
         
         api.KeywordRemoved += e =>

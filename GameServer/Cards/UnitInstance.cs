@@ -52,6 +52,27 @@ public class UnitInstance : CardInstance
         Bus.Publish(e);
     }
 
+    public void RemovePower(PowerReducedEvent e)
+    {
+        if (e.Card != this)
+            return;
+        _currentPower -= e.Power;
+        if (_currentPower < 0)
+            _currentPower = 0;
+        Bus.Publish(e);
+    }
+
+    public void SetStats(StatsSettedEvent e)
+    {
+        if (e.Card != this)
+            return;
+
+        _currentHealth = e.Health ?? _currentHealth;
+        _currentPower = e.Power ?? _currentPower;
+
+        Bus.Publish(e);
+    }
+
     public void TakeDamage(CardDamagedEvent e)
     {
         if (e.Card != this)

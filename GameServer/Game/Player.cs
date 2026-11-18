@@ -50,6 +50,21 @@ public class Player
         return card;
     }
 
+    public bool DrawExactCard(CardInstance card)
+    {
+        if (!_deck.Contains(card))
+            return false;
+        card.Zone = CardZone.Hand;
+        _hand.Add(card);
+        _deck.Remove(card);
+        card.Position = _hand.IndexOf(card);
+        for (int i = 0; i < _deck.Count; i++)
+        {
+            _deck[i].Position = i;
+        }
+        return true;
+    }
+
     public void AddToDiscard(CardInstance card)
     {
         card.Zone = CardZone.Discard;
@@ -91,9 +106,9 @@ public class Player
                     _deck.Add(card);
                 else
                     _deck.Insert(position.Value, card);
-                foreach (var c in _deck)
+                for (int i = 0; i < _deck.Count; i++)
                 {
-                    c.Position = _deck.IndexOf(c);
+                    _deck[i].Position = i;
                 }
                 break;
             }
@@ -104,9 +119,9 @@ public class Player
                     _discard.Add(card);
                 else
                     _discard.Insert(position.Value, card);
-                foreach (var c in _discard)
+                for (int i = 0; i < _discard.Count; i++)
                 {
-                    c.Position = _discard.IndexOf(c);
+                    _discard[i].Position = i;
                 }
                 break;
             }
@@ -117,9 +132,9 @@ public class Player
                     _hand.Add(card);
                 else
                     _hand.Insert(position.Value, card);
-                foreach (var c in _hand)
+                for (int i = 0; i < _hand.Count; i++)
                 {
-                    c.Position = _hand.IndexOf(c);
+                    _hand[i].Position = i;
                 }
                 break;
             }
