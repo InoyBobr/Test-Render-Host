@@ -1,0 +1,17 @@
+{
+  "CardId": "Green Sphere",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Green",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "color_to_green",
+      "Parameters": [
+        {"key" : "amount", "value" : 1}
+      ]
+    }
+  ],
+  "tags": []
+}

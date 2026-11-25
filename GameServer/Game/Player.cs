@@ -77,9 +77,9 @@ public class Player
     {
         _hand.Remove(card);
 
-        foreach (var c in _hand)
+        for (int i = 0; i < _deck.Count; i++)
         {
-            c.Position = _hand.IndexOf(c);
+            _deck[i].Position = i;
         }
     }
     

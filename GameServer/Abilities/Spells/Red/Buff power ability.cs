@@ -1,5 +1,5 @@
 namespace GameServer.Abilities.Spells.Red;
-
+[AbilityId("rusty_flag_ability")]
 public class Buff_power_ability : AbilityLogic
 {
     public Buff_power_ability(AbilityState state) : base(state) {}

@@ -6,15 +6,15 @@ public class DrawCardOnDeploy : AbilityLogic
     
     public override void OnGain()
     {
-        Bus.Subscribe<CardPlayedEvent>(DealDamageOnPlay, SubscriberOwnerType.Card, Owner);
+        Bus.Subscribe<CardPlayedEvent>(DrawCardOnPlay, SubscriberOwnerType.Card, Owner);
     }
 
     public override void OnRemove()
     {
-        Bus.Unsubscribe<CardPlayedEvent>(DealDamageOnPlay, Owner);
+        Bus.Unsubscribe<CardPlayedEvent>(DrawCardOnPlay, Owner);
     }
 
-    private void DealDamageOnPlay(CardPlayedEvent e)
+    private void DrawCardOnPlay(CardPlayedEvent e)
     {
         if (e.Card != Owner)
             return;

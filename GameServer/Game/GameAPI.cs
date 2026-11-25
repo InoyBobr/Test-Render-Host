@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 
@@ -70,7 +71,8 @@ public class GameAPI
     public event Action<ChoiceContext>? ChoiceStarted;
     public event Action<ChoiceResult>? ChoiceGetsResult;
     public event Action<PlayCardResult>? CardPlayedResult;
-    public event Action<CardPlayedEvent>? CardPlayed; 
+    public event Action<CardPlayedEvent>? CardPlayed;
+    public event Action<CardDiscardedEvent>? CardDiscarded; 
     public event Action<RotateFaceResult>? FaceRotatedResult;
     public event Action<FaceRotatedEvent>? FaceRotated;
     public event Action<KeywordAddedEvent>? KeywordAdded;
@@ -1127,6 +1129,7 @@ public class GameAPI
                     return;
                 int position = validPos[_random.Next(validPos.Count)];
                 var unit = CardFactory.Create(data, owner, this, CardZone.Board) as UnitInstance;
+                Debug.Assert(unit != null, nameof(unit) + " != null");
                 Board.PlaceCard(unit, position);
                 unit.Position = position;
                 ev = new CardCreatedEvent(unit, e.Source);
@@ -1154,6 +1157,29 @@ public class GameAPI
         CardCreated?.Invoke(ev);
     }
     
+    //Методы карт в руке
+
+    private void DiscardRandomCards(DiscardRandomCardRequestEvent e)
+    {
+        if(!e.Allowed)
+            return;
+        
+    }
+
+    private void DiscardExactCard(DiscardCardRequestEvent e)
+    {
+        if (!e.Allowed)
+            return;
+        if (!e.Card.Owner.GetHand().Contains(e.Card))
+            return;
+        e.Card.Owner.RemoveFromHand(e.Card);
+        e.Card.Owner.AddToDiscard(e.Card);
+        var ev = new CardDiscardedEvent(e.Card, e.Source);
+        History.Add(ev);
+        Bus.Publish(ev);
+        CardDiscarded?.Invoke(ev);
+    }
+
     //Методы действий игрока
     private void ChangeRemainingUnitsCounter(ChangeRemainingUnitCounterRequestEvent e)
     {
@@ -1452,6 +1478,8 @@ public class GameAPI
         Bus.Subscribe<AddKeywordRequestEvent>(AddKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveKeywordRequestEvent>(RemoveKeyword, SubscriberOwnerType.API, this);
         Bus.Subscribe<RemoveAllKeywordsRequestEvent>(RemoveAllKeywords, SubscriberOwnerType.API, this);
+        Bus.Subscribe<DiscardCardRequestEvent>(DiscardExactCard, SubscriberOwnerType.API, this);
+        Bus.Subscribe<DiscardRandomCardRequestEvent>(DiscardRandomCards, SubscriberOwnerType.API, this);
         Bus.Subscribe<ChangeColorRequestEvent>(ChangeColor, SubscriberOwnerType.API, this);
         Bus.Subscribe<AddAbilityRequestEvent>(AddAbility, SubscriberOwnerType.API, this);
         Bus.Subscribe<MoveCardRequestEvent>(MoveCard, SubscriberOwnerType.API, this);

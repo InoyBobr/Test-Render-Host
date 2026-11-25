@@ -1,9 +1,7 @@
 namespace GameServer.Abilities;
 [AbilityId("slime_ability")]
-public class Spawn_token_on_noncombat_damage : AbilityLogic
+public class Spawn_token_on_noncombat_damage(AbilityState state) : AbilityLogic(state)
 {
-    public Spawn_token_on_noncombat_damage(AbilityState state) : base(state) {}
-
     private Random rnd = new Random();
     public override void OnGain()
     {

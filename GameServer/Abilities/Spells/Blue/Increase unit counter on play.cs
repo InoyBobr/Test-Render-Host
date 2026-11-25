@@ -1,9 +1,7 @@
 namespace GameServer.Abilities.Spells.Blue;
 [AbilityId("wealth_ability")]
-public class Increase_unit_counter_on_play: AbilityLogic
+public class Increase_unit_counter_on_play(AbilityState state) : AbilityLogic(state)
 {
-    public Increase_unit_counter_on_play(AbilityState state) : base(state) {}
-    
     public override void OnGain()
     {
         Bus.Subscribe<CardPlayedEvent>(IncreaseCounter, SubscriberOwnerType.Card, Owner);
@@ -18,6 +16,8 @@ public class Increase_unit_counter_on_play: AbilityLogic
     {
         if (e.Card != Owner)
             return;
-        Bus.Publish(new ChangeRemainingUnitCounterRequestEvent(1, false, false, false, Owner));
+        if(!State.IntValues.TryGetValue("amount", out var amount))
+            return;
+        Bus.Publish(new ChangeRemainingUnitCounterRequestEvent(amount, false, false, false, Owner));
     }
 }

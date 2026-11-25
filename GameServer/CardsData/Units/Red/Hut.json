@@ -1,0 +1,15 @@
+{
+  "CardId": "Hut",
+  "Type": "Unit",
+  "basePower": 1,
+  "baseHealth": 5,
+  "color": "Red",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "hut_ability",
+      "Parameters": []
+    }
+  ],
+  "tags": []
+}

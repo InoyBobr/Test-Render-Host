@@ -620,6 +620,45 @@ public class DrawExactCardRequestEvent : CardEvent
     }
 }
 
+public class DiscardCardRequestEvent : CardEvent
+{
+    public bool Allowed = true;
+    public CardInstance Source;
+
+    public DiscardCardRequestEvent(CardInstance card, CardInstance source)
+    {
+        Card = card;
+        Source = source;
+    }
+
+}
+
+public class DiscardRandomCardRequestEvent : IGameEvent
+{
+    public bool Allowed = true;
+    public int Amount;
+    public Player Player;
+    public CardInstance Source;
+
+    public DiscardRandomCardRequestEvent(int amount, Player player, CardInstance source)
+    {
+        Amount = amount;
+        Player = player;
+        Source = source;
+    }
+}
+
+public class CardDiscardedEvent : CardEvent
+{
+    public CardInstance Source;
+
+    public CardDiscardedEvent(CardInstance card, CardInstance source)
+    {
+        Card = card;
+        Source = source;
+    }
+}
+
 public class CardMovedToDiscard : CardEvent
 {
     public CardMovedToDiscard(CardInstance card)

@@ -1,7 +1,7 @@
 [AbilityId("enemy_ping_on_play")]
-public class DamageEnemyOnPlayTestAbility : AbilityLogic
+public class RedShamanAbility : AbilityLogic
 {
-    public DamageEnemyOnPlayTestAbility(AbilityState state) : base(state) {}
+    public RedShamanAbility(AbilityState state) : base(state) {}
 
     public override void OnGain()
     {

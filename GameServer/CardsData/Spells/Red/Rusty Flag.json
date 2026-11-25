@@ -5,6 +5,13 @@
   "baseHealth": 0,
   "color": "Red",
   "keywords": [],
-  "abilities": [],
+  "abilities": [
+    {
+      "AbilityId": "rusty_flag_ability",
+      "Parameters": [
+        {"key" : "power", "value" : 3}
+      ]
+    }
+  ],
   "tags": []
 }

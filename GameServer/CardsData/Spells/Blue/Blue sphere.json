@@ -1,0 +1,17 @@
+{
+  "CardId": "Blue Sphere",
+  "Type": "Spell",
+  "basePower": 0,
+  "baseHealth": 0,
+  "color": "Blue",
+  "keywords": [],
+  "abilities": [
+    {
+      "AbilityId": "color_to_blue",
+      "Parameters": [
+        {"key" : "amount", "value" : 1}
+      ]
+    }
+  ],
+  "tags": []
+}

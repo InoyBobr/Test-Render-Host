@@ -33,7 +33,7 @@ public class SaplingsAbility : AbilityLogic
     public override bool CanBePlayed(GameContext ctx)
     {
         var greenFriends = ctx.GetFriendlyCards(Owner).Where(c => c.Color == StickerColor.Green);
-        return greenFriends.Count() >=2 ;
+        return greenFriends.Count() >=2;
     }
 
     public override List<TargetOptionGroup>? GetTargetOptions(GameContext ctx)

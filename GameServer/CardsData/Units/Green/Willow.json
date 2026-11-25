@@ -9,7 +9,7 @@
     {
       "AbilityId": "willow_ability",
       "Parameters": [
-        {"key" : "damage", "value" : 1}
+        {"key" : "damage", "value" : 2}
       ]
     }
   ],

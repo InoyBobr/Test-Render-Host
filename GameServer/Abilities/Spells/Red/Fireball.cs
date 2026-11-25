@@ -1,8 +1,6 @@
 [AbilityId("fireball_ability")]
-public class FireballAbility : AbilityLogic
+public class FireballAbility(AbilityState state) : AbilityLogic(state)
 {
-    public FireballAbility(AbilityState state) : base(state) {}
-
     public override void OnGain()
     {
         Bus.Subscribe<CardPlayedEvent>(DealDamageOnPlay, SubscriberOwnerType.Card, Owner);

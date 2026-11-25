@@ -4,7 +4,7 @@
   "basePower": 9,
   "baseHealth": 7,
   "color": "Red",
-  "keywords": [],
+  "keywords": ["Sleeping"],
   "abilities": [
     {
       "AbilityId": "ogre_ability",
